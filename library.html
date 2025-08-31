@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Calibre - Library</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+    <header class="app-bar">
+        <div class="app-bar-start">
+            <button class="icon-button" aria-label="Open navigation drawer">&#9776;</button>
+            <h1 class="app-bar-title">Library</h1>
+        </div>
+        <div class="app-bar-end">
+            <button class="icon-button" aria-label="Search">&#128269;</button>
+            <button class="icon-button" aria-label="Filter">&#9660;</button>
+            <button id="theme-switcher" class="icon-button" aria-label="Switch theme">&#127769;</button>
+        </div>
+    </header>
+
+    <main class="library-grid-container">
+        <div class="library-grid">
+            <a href="details.html" class="card">
+                <div class="card-cover">
+                    <img src="https://picsum.photos/seed/book1/200/300" alt="Book Cover for The Midnight Library">
+                </div>
+                <div class="card-content">
+                    <h3 class="card-title">The Midnight Library</h3>
+                    <p class="card-author">Matt Haig</p>
+                </div>
+            </a>
+            <a href="details.html" class="card">
+                <div class="card-cover">
+                    <img src="https://picsum.photos/seed/book2/200/300" alt="Book Cover for Project Hail Mary">
+                </div>
+                <div class="card-content">
+                    <h3 class="card-title">Project Hail Mary</h3>
+                    <p class="card-author">Andy Weir</p>
+                </div>
+            </a>
+            <a href="details.html" class="card">
+                <div class="card-cover">
+                    <img src="https://picsum.photos/seed/book3/200/300" alt="Book Cover for Dune">
+                </div>
+                <div class="card-content">
+                    <h3 class="card-title">Dune</h3>
+                    <p class="card-author">Frank Herbert</p>
+                </div>
+            </a>
+            <a href="details.html" class="card">
+                <div class="card-cover">
+                    <img src="https://picsum.photos/seed/book4/200/300" alt="Book Cover for Klara and the Sun">
+                </div>
+                <div class="card-content">
+                    <h3 class="card-title">Klara and the Sun</h3>
+                    <p class="card-author">Kazuo Ishiguro</p>
+                </div>
+            </a>
+            <a href="details.html" class="card">
+                <div class="card-cover">
+                    <img src="https://picsum.photos/seed/book5/200/300" alt="Book Cover for The Four Winds">
+                </div>
+                <div class="card-content">
+                    <h3 class="card-title">The Four Winds</h3>
+                    <p class="card-author">Kristin Hannah</p>
+                </div>
+            </a>
+            <a href="details.html" class="card">
+                <div class="card-cover">
+                    <img src="https://picsum.photos/seed/book6/200/300" alt="Book Cover for The Song of Achilles">
+                </div>
+                <div class="card-content">
+                    <h3 class="card-title">The Song of Achilles</h3>
+                    <p class="card-author">Madeline Miller</p>
+                </div>
+            </a>
+             <a href="details.html" class="card">
+                <div class="card-cover">
+                    <img src="https://picsum.photos/seed/book7/200/300" alt="Book Cover for Circe">
+                </div>
+                <div class="card-content">
+                    <h3 class="card-title">Circe</h3>
+                    <p class="card-author">Madeline Miller</p>
+                </div>
+            </a>
+             <a href="details.html" class="card">
+                <div class="card-cover">
+                    <img src="https://picsum.photos/seed/book8/200/300" alt="Book Cover for The Vanishing Half">
+                </div>
+                <div class="card-content">
+                    <h3 class="card-title">The Vanishing Half</h3>
+                    <p class="card-author">Brit Bennett</p>
+                </div>
+            </a>
+        </div>
+    </main>
+
+    <button class="fab" aria-label="Add book">+</button>
+
+    <nav class="bottom-nav">
+        <a href="library.html" class="bottom-nav-item active">
+            <span class="bottom-nav-icon">&#128218;</span>
+            <span class="bottom-nav-label">Library</span>
+        </a>
+        <a href="details.html" class="bottom-nav-item">
+            <span class="bottom-nav-icon">&#128214;</span>
+            <span class="bottom-nav-label">Details</span>
+        </a>
+        <a href="reader.html" class="bottom-nav-item">
+            <span class="bottom-nav-icon">&#128240;</span>
+            <span class="bottom-nav-label">Reader</span>
+        </a>
+    </nav>
+
+    <script>
+        const themeSwitcher = document.getElementById('theme-switcher');
+        themeSwitcher.addEventListener('click', () => {
+            const currentTheme = document.body.getAttribute('data-theme');
+            if (currentTheme === 'dark') {
+                document.body.removeAttribute('data-theme');
+                themeSwitcher.innerHTML = '&#127769;'; // Moon icon
+            } else {
+                document.body.setAttribute('data-theme', 'dark');
+                themeSwitcher.innerHTML = '&#9728;'; // Sun icon
+            }
+        });
+    </script>
+
+</body>
+</html>
