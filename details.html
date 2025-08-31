@@ -5,12 +5,13 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Book Details</title>
     <link rel="stylesheet" href="styles.css">
+    <meta name="view-transition" content="same-origin">
 </head>
 <body>
 
     <header class="app-bar">
         <div class="app-bar-start">
-            <a href="library.html" class="icon-button" aria-label="Back to library">&#8592;</a>
+            <a href="library.html" class="icon-button" aria-label="Back to library" onclick="goBack(event)">&#8592;</a>
             <h1 class="app-bar-title">The Midnight Library</h1>
         </div>
         <div class="app-bar-end">
@@ -21,10 +22,10 @@
     <main class="details-container">
         <div class="details-header">
             <div class="details-cover">
-                <img src="https://picsum.photos/seed/book1/200/300" alt="Book Cover for The Midnight Library">
+                <img src="https://picsum.photos/seed/book1/200/300" alt="Book Cover for The Midnight Library" style="view-transition-name: book-cover-1;">
             </div>
             <div class="details-info">
-                <h2 class="details-title">The Midnight Library</h2>
+                <h2 class="details-title" style="view-transition-name: book-title-1;">The Midnight Library</h2>
                 <p class="details-author">by Matt Haig</p>
                 <p class="details-series">N/A</p>
                 <div class="details-rating">
@@ -72,6 +73,18 @@
     </nav>
 
     <script>
+        // --- Navigation ---
+        function goBack(event) {
+            if (!document.startViewTransition) {
+                return; // Fallback for browsers that don't support View Transitions
+            }
+            event.preventDefault();
+            document.startViewTransition(() => {
+                window.location.href = event.target.href;
+            });
+        }
+
+        // --- Theme Switcher ---
         const themeSwitcher = document.getElementById('theme-switcher');
         themeSwitcher.addEventListener('click', () => {
             const currentTheme = document.body.getAttribute('data-theme');

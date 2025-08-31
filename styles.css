@@ -129,8 +129,42 @@ main {
 }
 .library-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
-    gap: 16px;
+    grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+    gap: 24px;
+}
+.card-scene {
+    perspective: 1000px;
+    width: 180px;
+    height: 270px;
+}
+.card-flipper {
+    position: relative;
+    width: 100%;
+    height: 100%;
+    transition: transform 0.8s;
+    transform-style: preserve-3d;
+}
+.card-scene:hover .card-flipper {
+    transform: rotateY(180deg);
+}
+.card-front, .card-back {
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    -webkit-backface-visibility: hidden; /* Safari */
+    backface-visibility: hidden;
+}
+.card-back {
+    transform: rotateY(180deg);
+    background-color: var(--surface-color);
+    border-radius: 8px;
+    box-shadow: var(--card-shadow);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+.card-back .card-content {
+    text-align: center;
 }
 .card {
     background-color: var(--surface-color);
@@ -141,16 +175,27 @@ main {
     flex-direction: column;
     text-decoration: none;
     color: var(--on-surface-color);
-    transition: transform 0.2s;
+    width: 100%;
+    height: 100%;
+    transition: box-shadow 0.3s;
 }
-.card:hover {
-    transform: translateY(-4px);
+.card-front .card {
+    box-shadow: inset 0px 0px 40px rgba(255,255,255,0);
+}
+.card-scene:hover .card-front .card {
+    box-shadow: inset 200px 0px 40px rgba(255,255,255,0.5);
+}
+.card-back {
+    box-shadow: inset -200px 0px 40px rgba(0,0,0,0.2);
+}
+.card-scene:hover .card-back {
+    box-shadow: inset 0px 0px 40px rgba(0,0,0,0);
 }
 .card-cover img {
     width: 100%;
-    height: auto;
+    height: 100%;
+    object-fit: cover;
     display: block;
-    background-color: #ccc; /* Placeholder color */
 }
 .card-content {
     padding: 12px;
@@ -350,4 +395,21 @@ main {
 }
 .color-swatch.active {
     border-color: var(--primary-color);
+}
+
+/* View Transitions */
+@keyframes fade-in {
+  from { opacity: 0; }
+}
+
+@keyframes fade-out {
+  to { opacity: 0; }
+}
+
+::view-transition-old(root) {
+  animation: 300ms ease-out both fade-out;
+}
+
+::view-transition-new(root) {
+  animation: 300ms ease-in both fade-in;
 }
