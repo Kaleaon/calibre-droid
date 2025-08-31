@@ -27,8 +27,6 @@ class DatabaseRepository {
   }
 
   Future _createDB(Database db, int version) async {
-    // Note: Using TEXT for date/timestamp fields and storing as ISO 8601 strings
-    // or INTEGER for unix timestamps. Using INTEGER for simplicity here.
     await db.execute('''
       CREATE TABLE books (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -48,7 +46,6 @@ class DatabaseRepository {
         FOREIGN KEY (series_id) REFERENCES series (id) ON DELETE SET NULL
       )
     ''');
-
     await db.execute('''
       CREATE TABLE authors (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -56,29 +53,24 @@ class DatabaseRepository {
         sort_name TEXT
       )
     ''');
-
     await db.execute('''
       CREATE TABLE tags (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         name TEXT NOT NULL UNIQUE
       )
     ''');
-
     await db.execute('''
       CREATE TABLE publishers (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         name TEXT NOT NULL UNIQUE
       )
     ''');
-
     await db.execute('''
       CREATE TABLE series (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         name TEXT NOT NULL UNIQUE
       )
     ''');
-
-    // Link tables for many-to-many relationships
     await db.execute('''
       CREATE TABLE book_author_links (
         book_id INTEGER NOT NULL,
@@ -88,7 +80,6 @@ class DatabaseRepository {
         FOREIGN KEY (author_id) REFERENCES authors (id) ON DELETE CASCADE
       )
     ''');
-
     await db.execute('''
       CREATE TABLE book_tag_links (
         book_id INTEGER NOT NULL,
@@ -98,7 +89,6 @@ class DatabaseRepository {
         FOREIGN KEY (tag_id) REFERENCES tags (id) ON DELETE CASCADE
       )
     ''');
-
     await db.execute('''
       CREATE TABLE book_publisher_links (
         book_id INTEGER NOT NULL,
@@ -111,7 +101,6 @@ class DatabaseRepository {
   }
 
   // --- Insert Methods ---
-
   Future<int> insertBook(Book book) async {
     final db = await instance.database;
     return await db.insert('books', book.toMap());
@@ -153,38 +142,24 @@ class DatabaseRepository {
   }
 
   // --- Query Methods ---
-
   Future<Book?> getBookById(int id) async {
     final db = await instance.database;
-    final maps = await db.query(
-      'books',
-      where: 'id = ?',
-      whereArgs: [id],
-    );
-
+    final maps = await db.query('books', where: 'id = ?', whereArgs: [id]);
     if (maps.isNotEmpty) {
       return Book.fromMap(maps.first);
-    } else {
-      return null;
     }
+    return null;
   }
 
-  // Note: A full implementation would have methods to get authors/tags for a book
-  // and a comprehensive query builder. This is a simplified version.
   Future<List<int>> searchBooks(String query) async {
     final db = await instance.database;
     final sanitizedQuery = '%${query.replaceAll("'", "''")}%';
-
-    // This query finds all book IDs where either the book title matches OR
-    // any of the book's authors match the query.
-    // `DISTINCT` ensures we don't get duplicate book IDs if both title and author match.
     final List<Map<String, dynamic>> maps = await db.rawQuery('''
       SELECT DISTINCT b.id FROM books b
       LEFT JOIN book_author_links bal ON b.id = bal.book_id
       LEFT JOIN authors a ON a.id = bal.author_id
       WHERE b.title LIKE ? OR a.name LIKE ?
     ''', [sanitizedQuery, sanitizedQuery]);
-
     if (maps.isNotEmpty) {
       return maps.map((map) => map['id'] as int).toList();
     }
@@ -200,34 +175,19 @@ class DatabaseRepository {
   Future<List<BookWithDetails>> getBooksWithDetails() async {
     final db = await instance.database;
     final bookMaps = await db.query('books', orderBy: 'sort_title ASC');
-
     List<BookWithDetails> results = [];
-
     for (var bookMap in bookMaps) {
       final book = Book.fromMap(bookMap);
-
-      final authorMaps = await db.rawQuery('''
-        SELECT a.* FROM authors a
-        INNER JOIN book_author_links l ON a.id = l.author_id
-        WHERE l.book_id = ?
-      ''', [book.id]);
+      final authorMaps = await db.rawQuery('SELECT a.* FROM authors a INNER JOIN book_author_links l ON a.id = l.author_id WHERE l.book_id = ?', [book.id]);
       final authors = authorMaps.map((map) => Author.fromMap(map)).toList();
-
-      final tagMaps = await db.rawQuery('''
-        SELECT t.* FROM tags t
-        INNER JOIN book_tag_links l ON t.id = l.tag_id
-        WHERE l.book_id = ?
-      ''', [book.id]);
+      final tagMaps = await db.rawQuery('SELECT t.* FROM tags t INNER JOIN book_tag_links l ON t.id = l.tag_id WHERE l.book_id = ?', [book.id]);
       final tags = tagMaps.map((map) => Tag.fromMap(map)).toList();
-
       results.add(BookWithDetails(book: book, authors: authors, tags: tags));
     }
-
     return results;
   }
 
   // --- Update Methods ---
-
   Future<int> updateBook(Book book) async {
     final db = await instance.database;
     return await db.update('books', book.toMap(), where: 'id = ?', whereArgs: [book.id]);
@@ -235,22 +195,33 @@ class DatabaseRepository {
 
   Future<void> updateAuthorsForBook(int bookId, List<String> authorNames) async {
     final db = await instance.database;
-    // This is a simplified approach. A real app would handle authors more robustly.
-    // 1. Delete old links
     await db.delete('book_author_links', where: 'book_id = ?', whereArgs: [bookId]);
-
-    // 2. Find or create authors and create new links
     for (final name in authorNames) {
       if (name.trim().isEmpty) continue;
-      // Use INSERT OR IGNORE and then SELECT to get the ID
       int authorId;
       final existingAuthors = await db.query('authors', where: 'name = ?', whereArgs: [name.trim()]);
       if (existingAuthors.isNotEmpty) {
         authorId = existingAuthors.first['id'] as int;
       } else {
-        authorId = await db.insert('authors', {'name': name.trim()});
+        authorId = await db.insert('authors', {'name': name.trim(), 'sort_name': name.trim()});
       }
       await linkBookToAuthor(bookId, authorId);
+    }
+  }
+
+  Future<void> updateTagsForBook(int bookId, List<String> tagNames) async {
+    final db = await instance.database;
+    await db.delete('book_tag_links', where: 'book_id = ?', whereArgs: [bookId]);
+    for (final name in tagNames) {
+      if (name.trim().isEmpty) continue;
+      int tagId;
+      final existingTags = await db.query('tags', where: 'name = ?', whereArgs: [name.trim()]);
+      if (existingTags.isNotEmpty) {
+        tagId = existingTags.first['id'] as int;
+      } else {
+        tagId = await db.insert('tags', {'name': name.trim()});
+      }
+      await linkBookToTag(bookId, tagId);
     }
   }
 
