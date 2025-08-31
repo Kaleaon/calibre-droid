@@ -4,6 +4,7 @@ import 'package:path/path.dart' as p;
 import '../data/models/relations/book_with_details.dart';
 import '../data/preference_service.dart';
 import 'edit_book_screen.dart';
+import 'reader_screen.dart';
 
 class BookDetailsScreen extends StatelessWidget {
   final BookWithDetails bookDetails;
@@ -66,16 +67,49 @@ class BookDetailsScreen extends StatelessWidget {
           ),
         ),
       ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: () {
-          Navigator.push(
-            context,
-            MaterialPageRoute(
-              builder: (context) => EditBookScreen(bookDetails: bookDetails),
-            ),
-          );
-        },
-        child: const Icon(Icons.edit),
+      floatingActionButton: Column(
+        mainAxisAlignment: MainAxisAlignment.end,
+        children: [
+          FloatingActionButton(
+            heroTag: 'editBtn',
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => EditBookScreen(bookDetails: bookDetails),
+                ),
+              );
+            },
+            child: const Icon(Icons.edit),
+          ),
+          const SizedBox(height: 16),
+          FloatingActionButton(
+            heroTag: 'readBtn',
+            onPressed: () async {
+              final libraryPath = await PreferenceService().getLibraryPath();
+              if (libraryPath != null && bookDetails.book.path.isNotEmpty) {
+                // This is a simplification. A real app would query the 'data' table
+                // to get the exact filename for the EPUB format.
+                final bookFileName = '${bookDetails.book.title}.epub';
+                final bookFilePath = p.join(libraryPath, bookDetails.book.path, bookFileName);
+
+                if (File(bookFilePath).existsSync() && context.mounted) {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => ReaderScreen(bookPath: bookFilePath),
+                    ),
+                  );
+                } else {
+                   ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(content: Text('EPUB file not found at: $bookFilePath')),
+                  );
+                }
+              }
+            },
+            child: const Icon(Icons.menu_book),
+          ),
+        ],
       ),
     );
   }

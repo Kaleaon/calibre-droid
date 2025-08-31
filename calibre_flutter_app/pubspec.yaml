@@ -33,6 +33,9 @@ dependencies:
   # For parsing XML data
   xml: ^6.5.0
 
+  # For reading EPUB files
+  vocsy_epub_viewer: ^3.0.0
+
 dev_dependencies:
   flutter_test:
     sdk: flutter
