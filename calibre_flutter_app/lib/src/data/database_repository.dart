@@ -5,6 +5,7 @@ import 'models/author.dart';
 import 'models/tag.dart';
 import 'models/publisher.dart';
 import 'models/series.dart';
+import 'models/relations/book_with_details.dart';
 
 class DatabaseRepository {
   static final DatabaseRepository instance = DatabaseRepository._init();
@@ -172,6 +173,35 @@ class DatabaseRepository {
     final db = await instance.database;
     final result = await db.query('books', orderBy: 'sort_title ASC');
     return result.map((json) => Book.fromMap(json)).toList();
+  }
+
+  Future<List<BookWithDetails>> getBooksWithDetails() async {
+    final db = await instance.database;
+    final bookMaps = await db.query('books', orderBy: 'sort_title ASC');
+
+    List<BookWithDetails> results = [];
+
+    for (var bookMap in bookMaps) {
+      final book = Book.fromMap(bookMap);
+
+      final authorMaps = await db.rawQuery('''
+        SELECT a.* FROM authors a
+        INNER JOIN book_author_links l ON a.id = l.author_id
+        WHERE l.book_id = ?
+      ''', [book.id]);
+      final authors = authorMaps.map((map) => Author.fromMap(map)).toList();
+
+      final tagMaps = await db.rawQuery('''
+        SELECT t.* FROM tags t
+        INNER JOIN book_tag_links l ON t.id = l.tag_id
+        WHERE l.book_id = ?
+      ''', [book.id]);
+      final tags = tagMaps.map((map) => Tag.fromMap(map)).toList();
+
+      results.add(BookWithDetails(book: book, authors: authors, tags: tags));
+    }
+
+    return results;
   }
 
   Future<void> close() async {

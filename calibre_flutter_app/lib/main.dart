@@ -3,6 +3,7 @@ import 'package:file_picker/file_picker.dart';
 import 'src/data/database_repository.dart';
 import 'src/importer/importer.dart';
 import 'src/exporter/exporter.dart';
+import 'src/ui/library_screen.dart';
 
 void main() {
   // Ensure that the Flutter binding is initialized before calling runApp.
@@ -113,6 +114,16 @@ class _MyHomePageState extends State<MyHomePage> {
                   ElevatedButton(
                     onPressed: _handleExport,
                     child: const Text('Export Library'),
+                  ),
+                  const SizedBox(height: 40),
+                  ElevatedButton(
+                    onPressed: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(builder: (context) => const LibraryScreen()),
+                      );
+                    },
+                    child: const Text('View Library'),
                   ),
                 ],
               ),
