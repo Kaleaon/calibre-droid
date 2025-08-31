@@ -1,5 +1,8 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
+import 'package:path/path.dart' as p;
 import '../data/models/relations/book_with_details.dart';
+import '../data/preference_service.dart';
 
 class BookDetailsScreen extends StatelessWidget {
   final BookWithDetails bookDetails;
@@ -22,6 +25,26 @@ class BookDetailsScreen extends StatelessWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: <Widget>[
+              FutureBuilder<String?>(
+                future: PreferenceService().getLibraryPath(),
+                builder: (context, snapshot) {
+                  if (snapshot.hasData && snapshot.data != null && book.path.isNotEmpty) {
+                    final coverPath = p.join(snapshot.data!, book.path, 'cover.jpg');
+                    final coverFile = File(coverPath);
+                    if (coverFile.existsSync()) {
+                      return Center(
+                        child: Image.file(
+                          coverFile,
+                          height: 300,
+                          fit: BoxFit.contain,
+                        ),
+                      );
+                    }
+                  }
+                  return const Center(child: Icon(Icons.book, size: 150)); // Placeholder
+                },
+              ),
+              const SizedBox(height: 24),
               Text(
                 book.title,
                 style: Theme.of(context).textTheme.headlineMedium,

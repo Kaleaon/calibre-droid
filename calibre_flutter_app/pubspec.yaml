@@ -24,6 +24,9 @@ dependencies:
   # For path manipulation
   path: ^1.9.0
 
+  # For simple key-value storage
+  shared_preferences: ^2.2.3
+
 dev_dependencies:
   flutter_test:
     sdk: flutter

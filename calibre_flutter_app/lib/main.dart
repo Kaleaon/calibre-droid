@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:file_picker/file_picker.dart';
 import 'src/data/database_repository.dart';
+import 'src/data/preference_service.dart';
 import 'src/importer/importer.dart';
 import 'src/exporter/exporter.dart';
 import 'src/ui/library_screen.dart';
@@ -47,14 +48,16 @@ class _MyHomePageState extends State<MyHomePage> {
   Future<void> _handleImport() async {
     setState(() => _isLoading = true);
     try {
-      FilePickerResult? result = await FilePicker.platform.pickFiles(
-        dialogTitle: 'Select metadata.db',
-        type: FileType.any, // Cannot easily filter for .db, allow any.
+      String? directoryPath = await FilePicker.platform.getDirectoryPath(
+        dialogTitle: 'Select Calibre Library Folder',
       );
 
-      if (result != null && result.files.single.path != null) {
+      if (directoryPath != null) {
+        // Save the selected library path for future use
+        await PreferenceService().saveLibraryPath(directoryPath);
+
         final importer = Importer(
-          legacyDbPath: result.files.single.path!,
+          libraryDirectoryPath: directoryPath,
           appDbRepository: DatabaseRepository.instance,
         );
         await importer.import();

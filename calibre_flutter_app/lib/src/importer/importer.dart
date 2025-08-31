@@ -1,16 +1,20 @@
+import 'package:path/path.dart' as p;
 import 'package:sqflite/sqflite.dart';
 import '../data/database_repository.dart';
 import '../data/models/book.dart';
 
 class Importer {
-  final String legacyDbPath;
+  final String libraryDirectoryPath;
   final DatabaseRepository appDbRepository;
 
-  Importer({required this.legacyDbPath, required this.appDbRepository});
+  Importer({required this.libraryDirectoryPath, required this.appDbRepository});
 
   Future<void> import() async {
     Database? legacyDb;
     try {
+      // Construct the path to the metadata.db file.
+      final legacyDbPath = p.join(libraryDirectoryPath, 'metadata.db');
+
       // Open the legacy database read-only.
       legacyDb = await openDatabase(legacyDbPath, readOnly: true);
 

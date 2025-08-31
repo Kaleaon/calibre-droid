@@ -1,3 +1,27 @@
+# Calibre Flutter Porting Project - Progress Summary
+
+This project has pivoted to a cross-platform implementation using Flutter and Dart. The `calibre_flutter_app` directory contains the new application foundation.
+
+### Key Accomplishments:
+
+*   **Successful Pivot to Flutter:** The project was successfully moved from a native Android approach to Flutter to support cross-platform development (Android & iOS). Environmental issues with the Flutter toolchain were diagnosed and resolved.
+*   **Data Layer Foundation:** A complete data layer was built in Dart, including:
+    *   Data models for all core entities (Books, Authors, Tags, etc.).
+    *   A `DatabaseRepository` using the `sqflite` package to manage the app's internal database.
+*   **Data Migration:** Core logic for data migration was implemented:
+    *   **Importer:** A class to read a legacy Calibre `metadata.db` file and populate the app's database.
+    *   **Exporter:** A class to write the app's data back out to a Calibre-compatible `metadata.db` file.
+*   **UI Scaffolding:** A functional, read-only UI was built to:
+    *   Display a list of all books from the database, including cover images.
+    *   Show a detailed view for each book.
+    *   Provide navigation between screens.
+*   **Dependency Management:** All project dependencies were updated and resolved to a stable, compatible configuration.
+*   **Code Verification:** The entire Dart codebase passes `flutter analyze` with no issues, ensuring high code quality and syntactic correctness.
+
+**Note:** Further development, such as integrating a third-party e-reader package, is currently blocked by environmental limitations that prevent the automatic generation of native platform files (`android`/`ios` sub-projects) needed for packages with native code components.
+
+---
+
 # calibre
 
 <img align="left" src="https://raw.githubusercontent.com/kovidgoyal/calibre/master/resources/images/lt.png" height="200" width="200"/>
