@@ -24,19 +24,38 @@ class MainActivity : AppCompatActivity() {
     private val viewModel: MainViewModel by viewModels()
 
     // Modern way to handle activity results.
-    // This launcher opens the system's directory picker.
-    private val directoryPickerLauncher = registerForActivityResult(
+    // This launcher opens the system's directory picker for IMPORT.
+    private val importDirectoryPickerLauncher = registerForActivityResult(
         ActivityResultContracts.OpenDocumentTree()
     ) { uri: Uri? ->
         if (uri != null) {
-            // The user has selected a directory.
-            // Start the importer service to handle the import in the background.
+            // The user has selected a directory for import.
             startImporterService(uri)
             Toast.makeText(this, "Import started...", Toast.LENGTH_SHORT).show()
         } else {
-            // The user cancelled the directory selection.
-            Toast.makeText(this, "Directory selection cancelled", Toast.LENGTH_SHORT).show()
+            Toast.makeText(this, "Import directory selection cancelled", Toast.LENGTH_SHORT).show()
         }
+    }
+
+    // This launcher opens the system's directory picker for EXPORT.
+    private val exportDirectoryPickerLauncher = registerForActivityResult(
+        ActivityResultContracts.OpenDocumentTree()
+    ) { uri: Uri? ->
+        if (uri != null) {
+            // The user has selected a directory for export.
+            startExporterService(uri)
+            Toast.makeText(this, "Export started...", Toast.LENGTH_SHORT).show()
+        } else {
+            Toast.makeText(this, "Export directory selection cancelled", Toast.LENGTH_SHORT).show()
+        }
+    }
+
+    private fun startExporterService(directoryUri: Uri) {
+        val intent = Intent(this, com.calibre.service.ExporterService::class.java).apply {
+            action = com.calibre.service.ExporterService.ACTION_START_EXPORT
+            putExtra(com.calibre.service.ExporterService.EXTRA_OUTPUT_DIRECTORY_URI, directoryUri)
+        }
+        startService(intent)
     }
 
     private fun startImporterService(directoryUri: Uri) {
@@ -60,15 +79,20 @@ class MainActivity : AppCompatActivity() {
         binding.importLibraryButton.setOnClickListener {
             viewModel.onImportLibraryClicked()
         }
+        binding.exportLibraryButton.setOnClickListener {
+            viewModel.onExportLibraryClicked()
+        }
     }
 
     private fun observeViewModelEvents() {
         lifecycleScope.launch {
             viewModel.events.collectLatest { event ->
                 when (event) {
-                    is MainViewModel.Event.RequestDirectoryPicker -> {
-                        // The ViewModel has requested to open the directory picker.
-                        directoryPickerLauncher.launch(null)
+                    is MainViewModel.Event.RequestImportDirectoryPicker -> {
+                        importDirectoryPickerLauncher.launch(null)
+                    }
+                    is MainViewModel.Event.RequestExportDirectoryPicker -> {
+                        exportDirectoryPickerLauncher.launch(null)
                     }
                 }
             }

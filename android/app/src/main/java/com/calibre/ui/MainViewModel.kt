@@ -27,7 +27,18 @@ class MainViewModel : ViewModel() {
      */
     fun onImportLibraryClicked() {
         viewModelScope.launch {
-            _events.emit(Event.RequestDirectoryPicker)
+            _events.emit(Event.RequestImportDirectoryPicker)
+        }
+    }
+
+    /**
+     * Called when the "Export Library" button is clicked.
+     * This function emits an event to trigger the Storage Access Framework
+     * directory picker in the Activity for selecting an export location.
+     */
+    fun onExportLibraryClicked() {
+        viewModelScope.launch {
+            _events.emit(Event.RequestExportDirectoryPicker)
         }
     }
 
@@ -36,8 +47,13 @@ class MainViewModel : ViewModel() {
      */
     sealed class Event {
         /**
-         * An event to signal that the directory picker should be opened.
+         * An event to signal that the directory picker should be opened for import.
          */
-        object RequestDirectoryPicker : Event()
+        object RequestImportDirectoryPicker : Event()
+
+        /**
+         * An event to signal that the directory picker should be opened for export.
+         */
+        object RequestExportDirectoryPicker : Event()
     }
 }
