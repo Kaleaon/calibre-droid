@@ -1,0 +1,744 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Calibre Mockup</title>
+    <meta name="view-transition" content="same-origin">
+    <style>
+        /* General Body and Theme Setup */
+        :root {
+            --font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+
+            /* Light Theme (Default) */
+            --background-color: #f5f5f5;
+            --surface-color: #ffffff;
+            --on-surface-color: #000000;
+            --primary-color: #6200ee;
+            --on-primary-color: #ffffff;
+            --secondary-color: #03dac6;
+            --on-secondary-color: #000000;
+            --danger-color: #b00020;
+            --app-bar-color: #ffffff;
+            --bottom-nav-color: #ffffff;
+            --card-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        body[data-theme="dark"] {
+            --background-color: #121212;
+            --surface-color: #1e1e1e;
+            --on-surface-color: #ffffff;
+            --primary-color: #bb86fc;
+            --on-primary-color: #000000;
+            --secondary-color: #03dac6;
+            --on-secondary-color: #000000;
+            --danger-color: #cf6679;
+            --app-bar-color: #1e1e1e;
+            --bottom-nav-color: #1e1e1e;
+            --card-shadow: 0 2px 4px rgba(0,0,0,0.4);
+        }
+
+        body {
+            margin: 0;
+            font-family: var(--font-family);
+            background-color: var(--background-color);
+            color: var(--on-surface-color);
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+            transition: background-color 0.3s, color 0.3s;
+        }
+
+        main {
+            flex: 1;
+            overflow-y: auto;
+            padding-bottom: 72px; /* Space for bottom nav */
+        }
+
+        /* App Bar */
+        .app-bar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0 16px;
+            height: 56px;
+            background-color: var(--app-bar-color);
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            color: var(--on-surface-color);
+            position: sticky;
+            top: 0;
+            z-index: 10;
+        }
+        .app-bar-start, .app-bar-end {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .app-bar-title {
+            font-size: 20px;
+            font-weight: 500;
+            margin: 0;
+        }
+
+        /* Icon Button */
+        .icon-button {
+            background: none;
+            border: none;
+            color: var(--on-surface-color);
+            font-size: 24px;
+            padding: 8px;
+            border-radius: 50%;
+            cursor: pointer;
+            transition: background-color 0.2s;
+            text-decoration: none;
+        }
+        .icon-button:hover {
+            background-color: rgba(128, 128, 128, 0.1);
+        }
+
+        /* Bottom Navigation */
+        .bottom-nav {
+            display: flex;
+            justify-content: space-around;
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            height: 56px;
+            background-color: var(--bottom-nav-color);
+            box-shadow: 0 -2px 4px rgba(0,0,0,0.1);
+            z-index: 10;
+        }
+        .bottom-nav-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            flex: 1;
+            color: var(--on-surface-color);
+            text-decoration: none;
+            padding: 4px 0;
+            opacity: 0.7;
+        }
+        .bottom-nav-item.active {
+            color: var(--primary-color);
+            opacity: 1;
+        }
+        .bottom-nav-icon {
+            font-size: 24px;
+        }
+        .bottom-nav-label {
+            font-size: 12px;
+        }
+
+        /* Library View */
+        .library-grid-container {
+            padding: 16px;
+        }
+        .library-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+            gap: 24px;
+        }
+        .card-scene {
+            perspective: 1000px;
+            width: 180px;
+            height: 270px;
+        }
+        .card-flipper {
+            position: relative;
+            width: 100%;
+            height: 100%;
+            transition: transform 0.8s;
+            transform-style: preserve-3d;
+        }
+        .card-scene:hover .card-flipper {
+            transform: rotateY(180deg);
+        }
+        .card-front, .card-back {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            -webkit-backface-visibility: hidden; /* Safari */
+            backface-visibility: hidden;
+        }
+        .card-back {
+            transform: rotateY(180deg);
+            background-color: var(--surface-color);
+            border-radius: 8px;
+            box-shadow: var(--card-shadow);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .card-back .card-content {
+            text-align: center;
+        }
+        .card {
+            background-color: var(--surface-color);
+            border-radius: 8px;
+            box-shadow: var(--card-shadow);
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            text-decoration: none;
+            color: var(--on-surface-color);
+            width: 100%;
+            height: 100%;
+            transition: box-shadow 0.3s;
+        }
+        .card-front .card {
+            box-shadow: inset 0px 0px 40px rgba(255,255,255,0);
+        }
+        .card-scene:hover .card-front .card {
+            box-shadow: inset 200px 0px 40px rgba(255,255,255,0.5);
+        }
+        .card-back {
+            box-shadow: inset -200px 0px 40px rgba(0,0,0,0.2);
+        }
+        .card-scene:hover .card-back {
+            box-shadow: inset 0px 0px 40px rgba(0,0,0,0);
+        }
+        .card-cover img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            display: block;
+        }
+        .card-content {
+            padding: 12px;
+        }
+        .card-title {
+            font-size: 16px;
+            font-weight: 500;
+            margin: 0 0 4px 0;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        .card-author {
+            font-size: 14px;
+            color: var(--on-surface-color);
+            opacity: 0.7;
+            margin: 0;
+        }
+
+        /* Floating Action Button (FAB) */
+        .fab {
+            position: fixed;
+            bottom: 72px; /* Above bottom nav */
+            right: 16px;
+            width: 56px;
+            height: 56px;
+            background-color: var(--primary-color);
+            color: var(--on-primary-color);
+            border-radius: 50%;
+            border: none;
+            font-size: 24px;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+            cursor: pointer;
+            z-index: 20;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        /* Details View */
+        .details-container {
+            padding: 16px;
+        }
+        .details-header {
+            display: flex;
+            gap: 16px;
+            margin-bottom: 24px;
+        }
+        .details-cover img {
+            width: 120px;
+            height: auto;
+            border-radius: 4px;
+            box-shadow: var(--card-shadow);
+        }
+        .details-info {
+            flex: 1;
+        }
+        .details-title {
+            font-size: 24px;
+            margin: 0 0 8px 0;
+        }
+        .details-author, .details-series {
+            margin: 0 0 4px 0;
+            opacity: 0.7;
+        }
+        .details-actions {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 24px;
+            flex-wrap: wrap;
+        }
+        .details-summary, .details-metadata {
+            margin-bottom: 16px;
+        }
+        .details-metadata ul {
+            list-style: none;
+            padding: 0;
+        }
+        .details-metadata li {
+            margin-bottom: 8px;
+        }
+
+        /* Button */
+        .button {
+            background-color: var(--surface-color);
+            color: var(--primary-color);
+            border: 1px solid rgba(128, 128, 128, 0.3);
+            padding: 8px 16px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 500;
+            text-transform: uppercase;
+            transition: background-color 0.2s;
+        }
+        .button:hover {
+            background-color: rgba(128, 128, 128, 0.1);
+        }
+        .button.primary {
+            background-color: var(--primary-color);
+            color: var(--on-primary-color);
+            border-color: var(--primary-color);
+        }
+        .button.primary:hover {
+            background-color: var(--primary-color);
+            opacity: 0.9;
+        }
+        .button.danger {
+            border-color: var(--danger-color);
+            color: var(--danger-color);
+        }
+
+        /* Reader View */
+        .reader-body {
+            padding-bottom: 80px; /* Space for reader footer */
+        }
+        .reader-header {
+            position: sticky;
+            top: 0;
+        }
+        .reader-content {
+            padding: 16px;
+            font-size: 16px;
+            line-height: 1.6;
+            max-width: 800px;
+            margin: 0 auto;
+        }
+        .reader-footer {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background-color: var(--app-bar-color);
+            padding: 8px 16px;
+            box-shadow: 0 -2px 4px rgba(0,0,0,0.1);
+            z-index: 10;
+        }
+        .progress-bar {
+            width: 100%;
+            height: 4px;
+            background-color: rgba(128, 128, 128, 0.3);
+            border-radius: 2px;
+            margin-bottom: 8px;
+        }
+        .progress {
+            height: 100%;
+            background-color: var(--primary-color);
+            border-radius: 2px;
+        }
+        .reader-nav {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        /* Modal */
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: rgba(0, 0, 0, 0.5);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 100;
+            opacity: 0;
+            visibility: hidden;
+            transition: opacity 0.3s, visibility 0.3s;
+        }
+        .modal-overlay.visible {
+            opacity: 1;
+            visibility: visible;
+        }
+        .modal-content {
+            background-color: var(--surface-color);
+            padding: 24px;
+            border-radius: 8px;
+            width: 80%;
+            max-width: 400px;
+            box-shadow: 0 8px 16px rgba(0,0,0,0.2);
+        }
+        .setting-group {
+            margin-bottom: 16px;
+        }
+        .color-options {
+            display: flex;
+            gap: 8px;
+        }
+        .color-swatch {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            border: 2px solid rgba(128, 128, 128, 0.3);
+            cursor: pointer;
+        }
+        .color-swatch.active {
+            border-color: var(--primary-color);
+        }
+
+        /* View Transitions */
+        @keyframes fade-in {
+          from { opacity: 0; }
+        }
+
+        @keyframes fade-out {
+          to { opacity: 0; }
+        }
+
+        ::view-transition-old(root) {
+          animation: 300ms ease-out both fade-out;
+        }
+
+        ::view-transition-new(root) {
+          animation: 300ms ease-in both fade-in;
+        }
+
+        /* Single Page App styles */
+        .page {
+            display: none;
+        }
+        .page.active {
+            display: block;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Library Page -->
+    <div id="page-library" class="page active">
+        <header class="app-bar">
+            <div class="app-bar-start">
+                <button class="icon-button" aria-label="Open navigation drawer">&#9776;</button>
+                <h1 class="app-bar-title">Library</h1>
+            </div>
+            <div class="app-bar-end">
+                <button class="icon-button" aria-label="Search">&#128269;</button>
+                <button class="icon-button" aria-label="Filter">&#9660;</button>
+                <button class="theme-switcher icon-button" aria-label="Switch theme">&#127769;</button>
+            </div>
+        </header>
+
+        <main class="library-grid-container">
+            <div class="library-grid">
+                <div class="card-scene">
+                    <div class="card-flipper">
+                        <div class="card-front">
+                            <div class="card">
+                                <div class="card-cover">
+                                    <img src="https://images-na.ssl-images-amazon.com/images/S/compressed.photo.goodreads.com/books/1602190253i/52578297.jpg" alt="Book Cover for The Midnight Library" style="view-transition-name: book-cover-1;">
+                                </div>
+                                <div class="card-content">
+                                    <h3 class="card-title" style="view-transition-name: book-title-1;">The Midnight Library</h3>
+                                    <p class="card-author">Matt Haig</p>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="card-back">
+                            <div class="card-content">
+                                <h3>Synopsis</h3>
+                                <p>Between life and death there is a library... Every book provides a chance to try another life you could have lived.</p>
+                                <a href="#" class="button" onclick="navigateTo('details', { bookId: 1 })">View Details</a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="card-scene">
+                    <div class="card-flipper">
+                        <div class="card-front">
+                            <div class="card">
+                                <div class="card-cover">
+                                    <img src="https://images-na.ssl-images-amazon.com/images/S/compressed.photo.goodreads.com/books/1597695864i/54493401.jpg" alt="Book Cover for Project Hail Mary">
+                                </div>
+                                <div class="card-content">
+                                    <h3 class="card-title">Project Hail Mary</h3>
+                                    <p class="card-author">Andy Weir</p>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="card-back">
+                            <div class="card-content">
+                                <h3>Synopsis</h3>
+                                <p>A lone astronaut must save the earth from disaster in this incredible new science-based thriller...</p>
+                                <a href="#" class="button" onclick="navigateTo('details', { bookId: 2 })">View Details</a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="card-scene">
+                    <div class="card-flipper">
+                        <div class="card-front">
+                            <div class="card">
+                                <div class="card-cover">
+                                    <img src="https://images-na.ssl-images-amazon.com/images/S/compressed.photo.goodreads.com/books/1555447414i/44767458.jpg" alt="Book Cover for Dune">
+                                </div>
+                                <div class="card-content">
+                                    <h3 class="card-title">Dune</h3>
+                                    <p class="card-author">Frank Herbert</p>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="card-back">
+                            <div class="card-content">
+                                <h3>Synopsis</h3>
+                                <p>Set on the desert planet Arrakis, Dune is the story of the boy Paul Atreides, heir to a noble family...</p>
+                                <a href="#" class="button" onclick="navigateTo('details', { bookId: 3 })">View Details</a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="card-scene">
+                    <div class="card-flipper">
+                        <div class="card-front">
+                            <div class="card">
+                                <div class="card-cover">
+                                    <img src="https://images-na.ssl-images-amazon.com/images/S/compressed.photo.goodreads.com/books/1603206535i/54120408.jpg" alt="Book Cover for Klara and the Sun">
+                                </div>
+                                <div class="card-content">
+                                    <h3 class="card-title">Klara and the Sun</h3>
+                                    <p class="card-author">Kazuo Ishiguro</p>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="card-back">
+                            <div class="card-content">
+                                <h3>Synopsis</h3>
+                                <p>The story of Klara, an Artificial Friend with outstanding observational qualities, who watches carefully...</p>
+                                <a href="#" class="button" onclick="navigateTo('details', { bookId: 4 })">View Details</a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+        <button class="fab" aria-label="Add book">+</button>
+    </div>
+
+    <!-- Details Page -->
+    <div id="page-details" class="page">
+        <header class="app-bar">
+            <div class="app-bar-start">
+                <a href="#" class="icon-button" aria-label="Back to library" onclick="navigateTo('library')">&#8592;</a>
+                <h1 class="app-bar-title">The Midnight Library</h1>
+            </div>
+            <div class="app-bar-end">
+                <button class="theme-switcher icon-button" aria-label="Switch theme">&#127769;</button>
+            </div>
+        </header>
+        <main class="details-container">
+            <div class="details-header">
+                <div class="details-cover">
+                    <img src="https://images-na.ssl-images-amazon.com/images/S/compressed.photo.goodreads.com/books/1602190253i/52578297.jpg" alt="Book Cover for The Midnight Library" style="view-transition-name: book-cover-1;">
+                </div>
+                <div class="details-info">
+                    <h2 class="details-title" style="view-transition-name: book-title-1;">The Midnight Library</h2>
+                    <p class="details-author">by Matt Haig</p>
+                    <p class="details-series">N/A</p>
+                    <div class="details-rating">
+                        &#9733; &#9733; &#9733; &#9733; &#9734;
+                    </div>
+                </div>
+            </div>
+            <div class="details-actions">
+                <a href="#" class="button primary" onclick="navigateTo('reader')">Read</a>
+                <button class="button">Download</button>
+                <button class="button">Edit</button>
+                <button class="button danger">Delete</button>
+            </div>
+            <div class="details-summary">
+                <h3>Summary</h3>
+                <p>Between life and death there is a library, and within that library, the shelves go on forever. Every book provides a chance to try another life you could have lived. To see how things would be if you had made other choices . . . Would you have done anything different, if you had the chance to undo your regrets?</p>
+            </div>
+            <div class="details-metadata">
+                <h3>Details</h3>
+                <ul>
+                    <li><strong>Publisher:</strong> Viking</li>
+                    <li><strong>Published:</strong> August 13, 2020</li>
+                    <li><strong>Tags:</strong> Fiction, Fantasy, Contemporary</li>
+                    <li><strong>ISBN:</strong> 978-0525559474</li>
+                </ul>
+            </div>
+        </main>
+    </div>
+
+    <!-- Reader Page -->
+    <div id="page-reader" class="page">
+        <header class="app-bar reader-header">
+            <div class="app-bar-start">
+                <a href="#" class="icon-button" aria-label="Back to details" onclick="navigateTo('details')">&#8592;</a>
+                <h1 class="app-bar-title">Chapter 1</h1>
+            </div>
+            <div class="app-bar-end">
+                <button id="reader-settings-button" class="icon-button" aria-label="Reader settings">&#9881;</button>
+                <button class="theme-switcher icon-button" aria-label="Switch theme">&#127769;</button>
+            </div>
+        </header>
+        <main class="reader-content">
+            <h2>Chapter 1: The Beginning</h2>
+            <p>Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed non risus. Suspendisse lectus tortor, dignissim sit amet, adipiscing nec, ultricies sed, dolor. Cras elementum ultrices diam. Maecenas ligula massa, varius a, semper congue, euismod non, mi. Proin porttitor, orci nec nonummy molestie, enim est eleifend mi, non fermentum diam nisl sit amet erat. Duis semper. Duis arcu massa, scelerisque vitae, consequat in, pretium a, enim. Pellentesque congue. Ut in risus volutpat libero pharetra tempor. Cras vestibulum bibendum augue. Praesent egestas leo in pede. Praesent blandit odio eu enim. Pellentesque sed dui ut augue blandit sodales. Vestibulum ante ipsum primis in faucibus orci luctus et ultrices posuere cubilia Curae; Aliquam nibh.</p>
+        </main>
+        <footer class="reader-footer">
+            <div class="progress-bar">
+                <div class="progress" style="width: 10%;"></div>
+            </div>
+            <div class="reader-nav">
+                <button class="button">&lt; Prev</button>
+                <span>Page 1 of 10</span>
+                <button class="button">Next &gt;</button>
+            </div>
+        </footer>
+        <div id="reader-settings-modal" class="modal-overlay">
+            <div class="modal-content">
+                <h3>Reader Settings</h3>
+                <div class="setting-group">
+                    <label for="font-size">Font Size</label>
+                    <input type="range" id="font-size" name="font-size" min="12" max="30" value="16">
+                </div>
+                <div class="setting-group">
+                    <label>Background Color</label>
+                    <div class="color-options">
+                        <button class="color-swatch active" data-bg-color="#FFFFFF" data-text-color="#000000" style="background-color: #FFFFFF;"></button>
+                        <button class="color-swatch" data-bg-color="#FDF6E3" data-text-color="#586E75" style="background-color: #FDF6E3;"></button>
+                        <button class="color-swatch" data-bg-color="#002B36" data-text-color="#839496" style="background-color: #002B36;"></button>
+                    </div>
+                </div>
+                <button id="close-modal-button" class="button">Close</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Universal Bottom Navigation -->
+    <nav class="bottom-nav">
+        <a href="#" class="bottom-nav-item active" onclick="navigateTo('library')">
+            <span class="bottom-nav-icon">&#128218;</span>
+            <span class="bottom-nav-label">Library</span>
+        </a>
+        <a href="#" class="bottom-nav-item" onclick="navigateTo('details')">
+            <span class="bottom-nav-icon">&#128214;</span>
+            <span class="bottom-nav-label">Details</span>
+        </a>
+        <a href="#" class="bottom-nav-item" onclick="navigateTo('reader')">
+            <span class="bottom-nav-icon">&#128240;</span>
+            <span class="bottom-nav-label">Reader</span>
+        </a>
+    </nav>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            // --- Page Navigation ---
+            const pages = document.querySelectorAll('.page');
+            const navLinks = document.querySelectorAll('.bottom-nav-item');
+
+            window.navigateTo = (pageId, data) => {
+                // Fallback for browsers that don't support View Transitions
+                if (!document.startViewTransition) {
+                    pages.forEach(page => page.classList.toggle('active', page.id === `page-${pageId}`));
+                    navLinks.forEach(link => {
+                        link.classList.toggle('active', link.getAttribute('onclick').includes(`'${pageId}'`));
+                    });
+                    return;
+                }
+
+                // View Transition
+                document.startViewTransition(() => {
+                    pages.forEach(page => page.classList.toggle('active', page.id === `page-${pageId}`));
+                    navLinks.forEach(link => {
+                        link.classList.toggle('active', link.getAttribute('onclick').includes(`'${pageId}'`));
+                    });
+                });
+            };
+
+            // --- Theme Switcher ---
+            const themeSwitchers = document.querySelectorAll('.theme-switcher');
+            themeSwitchers.forEach(switcher => {
+                switcher.addEventListener('click', (event) => {
+                    event.stopPropagation();
+                    const currentTheme = document.body.getAttribute('data-theme');
+                    if (currentTheme === 'dark') {
+                        document.body.removeAttribute('data-theme');
+                        themeSwitchers.forEach(s => s.innerHTML = '&#127769;'); // Moon
+                    } else {
+                        document.body.setAttribute('data-theme', 'dark');
+                        themeSwitchers.forEach(s => s.innerHTML = '&#9728;'); // Sun
+                    }
+                });
+            });
+
+            // --- Reader Settings Modal ---
+            const settingsButton = document.getElementById('reader-settings-button');
+            const modal = document.getElementById('reader-settings-modal');
+            const closeButton = document.getElementById('close-modal-button');
+
+            if (settingsButton && modal && closeButton) {
+                settingsButton.addEventListener('click', () => {
+                    modal.classList.add('visible');
+                });
+
+                closeButton.addEventListener('click', () => {
+                    modal.classList.remove('visible');
+                });
+
+                modal.addEventListener('click', (event) => {
+                    if (event.target === modal) {
+                        modal.classList.remove('visible');
+                    }
+                });
+            }
+
+            // --- Reader Customization ---
+            const readerContent = document.querySelector('#page-reader .reader-content');
+            const fontSizeSlider = document.getElementById('font-size');
+            const colorSwatches = document.querySelectorAll('#page-reader .color-swatch');
+            const readerPage = document.getElementById('page-reader');
+
+
+            if (readerContent && fontSizeSlider && colorSwatches.length > 0 && readerPage) {
+                fontSizeSlider.addEventListener('input', (event) => {
+                    readerContent.style.fontSize = `${event.target.value}px`;
+                });
+
+                colorSwatches.forEach(swatch => {
+                    swatch.addEventListener('click', () => {
+                        document.querySelector('#page-reader .color-swatch.active').classList.remove('active');
+                        swatch.classList.add('active');
+
+                        const bgColor = swatch.dataset.bgColor;
+                        const textColor = swatch.dataset.textColor;
+
+                        readerPage.style.backgroundColor = bgColor;
+                        readerPage.style.color = textColor;
+                    });
+                });
+            }
+        });
+    </script>
+</body>
+</html>
