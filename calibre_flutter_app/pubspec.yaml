@@ -27,6 +27,9 @@ dependencies:
   # For simple key-value storage
   shared_preferences: ^2.2.3
 
+  # For finding paths on the filesystem
+  path_provider: ^2.1.0
+
   # For making HTTP requests
   http: ^1.2.0
 

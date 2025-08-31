@@ -1,4 +1,6 @@
+import 'dart:io';
 import 'package:path/path.dart' as p;
+import 'package:path_provider/path_provider.dart';
 import 'package:sqflite/sqflite.dart';
 import '../data/database_repository.dart';
 import '../data/models/book.dart';
@@ -18,8 +20,9 @@ class Importer {
       // Open the legacy database read-only.
       legacyDb = await openDatabase(legacyDbPath, readOnly: true);
 
-      // Get the app's database.
+      // Get the app's database and local storage directory.
       final appDb = await appDbRepository.database;
+      final appDocsDir = await getApplicationDocumentsDirectory();
 
       // Use a transaction for the app's database for performance.
       await appDb.transaction((txn) async {
@@ -62,17 +65,39 @@ class Importer {
         // Import books (must be last to ensure foreign keys are present)
         var legacyBooks = await legacyDb.rawQuery('SELECT b.id, b.title, b.sort, b.path, b.has_cover, b.series_index, b.timestamp, b.pubdate, bsl.series as series_id FROM books b LEFT JOIN books_series_link bsl ON b.id = bsl.book');
         for (var legacyBook in legacyBooks) {
+          final originalRelativePath = legacyBook['path'] as String;
+          if (originalRelativePath.isEmpty) continue;
+
+          // 1. Copy files
+          final sourceBookDir = Directory(p.join(libraryDirectoryPath, originalRelativePath));
+          final destBookDir = Directory(p.join(appDocsDir.path, originalRelativePath));
+          if (!await destBookDir.exists()) {
+            await destBookDir.create(recursive: true);
+          }
+
+          if (await sourceBookDir.exists()) {
+            await for (final file in sourceBookDir.list()) {
+              if (file is File) {
+                final newPath = p.join(destBookDir.path, p.basename(file.path));
+                await file.copy(newPath);
+              }
+            }
+          }
+
+          // 2. Create book object with the NEW relative path (relative to app docs)
           final book = Book(
             id: legacyBook['id'] as int,
             title: legacyBook['title'] as String,
             sortTitle: legacyBook['sort'] as String?,
-            path: legacyBook['path'] as String,
+            path: originalRelativePath, // Storing the same relative path, but now it's relative to appDocsDir
             hasCover: (legacyBook['has_cover'] as int) == 1,
             seriesIndex: legacyBook['series_index'] as double,
             seriesId: legacyBook['series_id'] as int?,
             lastModified: _parseDate(legacyBook['timestamp']),
             publicationDate: _parseDate(legacyBook['pubdate']),
           );
+
+          // 3. Insert the book record
           await txn.insert('books', book.toMap());
         }
       });

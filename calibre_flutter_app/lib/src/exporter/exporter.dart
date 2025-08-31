@@ -1,3 +1,6 @@
+import 'dart:io';
+import 'package:path/path.dart' as p;
+import 'package:path_provider/path_provider.dart';
 import 'package:sqflite/sqflite.dart';
 import '../data/database_repository.dart';
 
@@ -12,22 +15,46 @@ class Exporter {
     try {
       exportDb = await openDatabase(outputPath);
 
+      // Get the app's documents directory to find the source files.
+      final appDocsDir = await getApplicationDocumentsDirectory();
+
       await exportDb.transaction((txn) async {
         // Step 1: Create the complete legacy Calibre schema.
         await _createCalibreSchema(txn);
 
         // Step 2: Fetch data from the app's repository.
-        final books = await appDbRepository.getAllBooks();
-        // In a full implementation, we'd also fetch authors, tags, etc.
-        // This is a simplified example.
+        final booksWithDetails = await appDbRepository.getBooksWithDetails();
 
-        // Step 3: Insert data into the new legacy database.
-        for (final book in books) {
-          await txn.rawInsert(
-            'INSERT INTO books (id, title, sort, path, has_cover) VALUES (?, ?, ?, ?, ?)',
-            [book.id, book.title, book.sortTitle, book.path, book.hasCover ? 1 : 0],
-          );
-          // ... and so on for all other tables and link tables.
+        // Step 3: Insert data and copy files.
+        for (final bookDetails in booksWithDetails) {
+          final book = bookDetails.book;
+
+          // Insert book metadata into the new DB
+          await txn.insert('books', book.toMap());
+
+          // ... Here you would insert authors, tags, and all link table entries ...
+
+          // Copy the book's files
+          if (book.path.isNotEmpty) {
+            final sourceDir = Directory(p.join(appDocsDir.path, book.path));
+            // Note: The outputPath from the file picker is the DB file itself.
+            // We need to create the book folder relative to its parent directory.
+            final exportRoot = Directory(p.dirname(outputPath));
+            final destDir = Directory(p.join(exportRoot.path, book.path));
+
+            if (!await destDir.exists()) {
+              await destDir.create(recursive: true);
+            }
+
+            if (await sourceDir.exists()) {
+              await for (final file in sourceDir.list()) {
+                if (file is File) {
+                  final newPath = p.join(destDir.path, p.basename(file.path));
+                  await file.copy(newPath);
+                }
+              }
+            }
+          }
         }
       });
     } finally {

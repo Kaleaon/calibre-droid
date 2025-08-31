@@ -1,8 +1,8 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:path/path.dart' as p;
+import 'package:path_provider/path_provider.dart';
 import '../data/models/relations/book_with_details.dart';
-import '../data/preference_service.dart';
 import 'edit_book_screen.dart';
 import 'reader_screen.dart';
 
@@ -27,11 +27,11 @@ class BookDetailsScreen extends StatelessWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: <Widget>[
-              FutureBuilder<String?>(
-                future: PreferenceService().getLibraryPath(),
+              FutureBuilder<Directory>(
+                future: getApplicationDocumentsDirectory(),
                 builder: (context, snapshot) {
-                  if (snapshot.hasData && snapshot.data != null && book.path.isNotEmpty) {
-                    final coverPath = p.join(snapshot.data!, book.path, 'cover.jpg');
+                  if (snapshot.hasData && book.path.isNotEmpty) {
+                    final coverPath = p.join(snapshot.data!.path, book.path, 'cover.jpg');
                     final coverFile = File(coverPath);
                     if (coverFile.existsSync()) {
                       return Center(
@@ -86,12 +86,12 @@ class BookDetailsScreen extends StatelessWidget {
           FloatingActionButton(
             heroTag: 'readBtn',
             onPressed: () async {
-              final libraryPath = await PreferenceService().getLibraryPath();
-              if (libraryPath != null && bookDetails.book.path.isNotEmpty) {
+              final appDocsDir = await getApplicationDocumentsDirectory();
+              if (bookDetails.book.path.isNotEmpty) {
                 // This is a simplification. A real app would query the 'data' table
                 // to get the exact filename for the EPUB format.
                 final bookFileName = '${bookDetails.book.title}.epub';
-                final bookFilePath = p.join(libraryPath, bookDetails.book.path, bookFileName);
+                final bookFilePath = p.join(appDocsDir.path, bookDetails.book.path, bookFileName);
 
                 if (File(bookFilePath).existsSync() && context.mounted) {
                   Navigator.push(

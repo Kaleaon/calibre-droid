@@ -1,9 +1,9 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:path/path.dart' as p;
+import 'package:path_provider/path_provider.dart';
 import '../data/database_repository.dart';
 import '../data/models/relations/book_with_details.dart';
-import '../data/preference_service.dart';
 import 'book_details_screen.dart';
 
 class LibraryScreen extends StatefulWidget {
@@ -52,7 +52,9 @@ class _LibraryScreenState extends State<LibraryScreen> {
 
   Future<void> _loadData() async {
     setState(() => _isLoading = true);
-    _libraryPath = await PreferenceService().getLibraryPath();
+    // Get the app's local documents directory, which is our new library root.
+    final appDocsDir = await getApplicationDocumentsDirectory();
+    _libraryPath = appDocsDir.path;
     final books = await DatabaseRepository.instance.getBooksWithDetails();
     setState(() {
       _allBooks = books;
