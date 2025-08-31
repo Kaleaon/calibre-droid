@@ -42,6 +42,8 @@ class DatabaseRepository {
         uuid TEXT,
         has_cover INTEGER NOT NULL DEFAULT 0,
         path TEXT NOT NULL,
+        publisher TEXT,
+        comments TEXT,
         series_id INTEGER,
         FOREIGN KEY (series_id) REFERENCES series (id) ON DELETE SET NULL
       )
@@ -222,6 +224,34 @@ class DatabaseRepository {
     }
 
     return results;
+  }
+
+  // --- Update Methods ---
+
+  Future<int> updateBook(Book book) async {
+    final db = await instance.database;
+    return await db.update('books', book.toMap(), where: 'id = ?', whereArgs: [book.id]);
+  }
+
+  Future<void> updateAuthorsForBook(int bookId, List<String> authorNames) async {
+    final db = await instance.database;
+    // This is a simplified approach. A real app would handle authors more robustly.
+    // 1. Delete old links
+    await db.delete('book_author_links', where: 'book_id = ?', whereArgs: [bookId]);
+
+    // 2. Find or create authors and create new links
+    for (final name in authorNames) {
+      if (name.trim().isEmpty) continue;
+      // Use INSERT OR IGNORE and then SELECT to get the ID
+      int authorId;
+      final existingAuthors = await db.query('authors', where: 'name = ?', whereArgs: [name.trim()]);
+      if (existingAuthors.isNotEmpty) {
+        authorId = existingAuthors.first['id'] as int;
+      } else {
+        authorId = await db.insert('authors', {'name': name.trim()});
+      }
+      await linkBookToAuthor(bookId, authorId);
+    }
   }
 
   Future<void> close() async {

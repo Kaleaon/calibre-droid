@@ -11,6 +11,8 @@ class Book {
   final bool hasCover;
   final String path;
   final int? seriesId;
+  final String? publisher;
+  final String? comments;
 
   Book({
     this.id,
@@ -25,6 +27,8 @@ class Book {
     this.hasCover = false,
     required this.path,
     this.seriesId,
+    this.publisher,
+    this.comments,
   });
 
   /// Converts this Book instance into a Map.
@@ -43,10 +47,46 @@ class Book {
       'has_cover': hasCover ? 1 : 0,
       'path': path,
       'series_id': seriesId,
+      'publisher': publisher,
+      'comments': comments,
     };
   }
 
   /// Creates a Book instance from a Map.
+  Book copyWith({
+    int? id,
+    String? title,
+    String? sortTitle,
+    int? lastModified,
+    int? publicationDate,
+    double? seriesIndex,
+    String? authorSort,
+    String? isbn,
+    String? uuid,
+    bool? hasCover,
+    String? path,
+    int? seriesId,
+    String? publisher,
+    String? comments,
+  }) {
+    return Book(
+      id: id ?? this.id,
+      title: title ?? this.title,
+      sortTitle: sortTitle ?? this.sortTitle,
+      lastModified: lastModified ?? this.lastModified,
+      publicationDate: publicationDate ?? this.publicationDate,
+      seriesIndex: seriesIndex ?? this.seriesIndex,
+      authorSort: authorSort ?? this.authorSort,
+      isbn: isbn ?? this.isbn,
+      uuid: uuid ?? this.uuid,
+      hasCover: hasCover ?? this.hasCover,
+      path: path ?? this.path,
+      seriesId: seriesId ?? this.seriesId,
+      publisher: publisher ?? this.publisher,
+      comments: comments ?? this.comments,
+    );
+  }
+
   factory Book.fromMap(Map<String, dynamic> map) {
     return Book(
       id: map['id'],
@@ -61,6 +101,8 @@ class Book {
       hasCover: map['has_cover'] == 1,
       path: map['path'],
       seriesId: map['series_id'],
+      publisher: map['publisher'],
+      comments: map['comments'],
     );
   }
 }

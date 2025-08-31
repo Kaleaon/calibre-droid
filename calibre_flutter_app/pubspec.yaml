@@ -27,6 +27,12 @@ dependencies:
   # For simple key-value storage
   shared_preferences: ^2.2.3
 
+  # For making HTTP requests
+  http: ^1.2.0
+
+  # For parsing XML data
+  xml: ^6.5.0
+
 dev_dependencies:
   flutter_test:
     sdk: flutter

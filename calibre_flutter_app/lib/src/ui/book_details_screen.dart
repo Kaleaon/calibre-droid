@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:path/path.dart' as p;
 import '../data/models/relations/book_with_details.dart';
 import '../data/preference_service.dart';
+import 'edit_book_screen.dart';
 
 class BookDetailsScreen extends StatelessWidget {
   final BookWithDetails bookDetails;
@@ -64,6 +65,17 @@ class BookDetailsScreen extends StatelessWidget {
             ],
           ),
         ),
+      ),
+      floatingActionButton: FloatingActionButton(
+        onPressed: () {
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (context) => EditBookScreen(bookDetails: bookDetails),
+            ),
+          );
+        },
+        child: const Icon(Icons.edit),
       ),
     );
   }
