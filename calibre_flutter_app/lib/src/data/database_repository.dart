@@ -169,6 +169,26 @@ class DatabaseRepository {
 
   // Note: A full implementation would have methods to get authors/tags for a book
   // and a comprehensive query builder. This is a simplified version.
+  Future<List<int>> searchBooks(String query) async {
+    final db = await instance.database;
+    final sanitizedQuery = '%${query.replaceAll("'", "''")}%';
+
+    // This query finds all book IDs where either the book title matches OR
+    // any of the book's authors match the query.
+    // `DISTINCT` ensures we don't get duplicate book IDs if both title and author match.
+    final List<Map<String, dynamic>> maps = await db.rawQuery('''
+      SELECT DISTINCT b.id FROM books b
+      LEFT JOIN book_author_links bal ON b.id = bal.book_id
+      LEFT JOIN authors a ON a.id = bal.author_id
+      WHERE b.title LIKE ? OR a.name LIKE ?
+    ''', [sanitizedQuery, sanitizedQuery]);
+
+    if (maps.isNotEmpty) {
+      return maps.map((map) => map['id'] as int).toList();
+    }
+    return [];
+  }
+
   Future<List<Book>> getAllBooks() async {
     final db = await instance.database;
     final result = await db.query('books', orderBy: 'sort_title ASC');

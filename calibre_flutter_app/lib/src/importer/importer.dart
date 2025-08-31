@@ -60,9 +60,8 @@ class Importer {
         }
 
         // Import books (must be last to ensure foreign keys are present)
-        var legacyBooks = await legacyDb.rawQuery('SELECT b.id, b.title, b.sort, b.path, b.has_cover, b.series_index, bsl.series as series_id FROM books b LEFT JOIN books_series_link bsl ON b.id = bsl.book');
+        var legacyBooks = await legacyDb.rawQuery('SELECT b.id, b.title, b.sort, b.path, b.has_cover, b.series_index, b.timestamp, b.pubdate, bsl.series as series_id FROM books b LEFT JOIN books_series_link bsl ON b.id = bsl.book');
         for (var legacyBook in legacyBooks) {
-          // A more robust implementation would handle date parsing.
           final book = Book(
             id: legacyBook['id'] as int,
             title: legacyBook['title'] as String,
@@ -71,9 +70,8 @@ class Importer {
             hasCover: (legacyBook['has_cover'] as int) == 1,
             seriesIndex: legacyBook['series_index'] as double,
             seriesId: legacyBook['series_id'] as int?,
-            // Placeholder for dates
-            lastModified: DateTime.now().millisecondsSinceEpoch,
-            publicationDate: DateTime.now().millisecondsSinceEpoch,
+            lastModified: _parseDate(legacyBook['timestamp']),
+            publicationDate: _parseDate(legacyBook['pubdate']),
           );
           await txn.insert('books', book.toMap());
         }
@@ -81,5 +79,18 @@ class Importer {
     } finally {
       await legacyDb?.close();
     }
+  }
+
+  int _parseDate(dynamic dateValue) {
+    if (dateValue is String) {
+      try {
+        return DateTime.parse(dateValue).millisecondsSinceEpoch;
+      } catch (e) {
+        // Fallback for invalid format
+        return 0;
+      }
+    }
+    // Return 0 or some other default if it's not a string
+    return 0;
   }
 }
