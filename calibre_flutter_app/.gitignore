@@ -1,0 +1,32 @@
+# Flutter/Dart specific
+.dart_tool/
+.packages
+.pub-cache/
+build/
+
+# iOS build files
+ios/Flutter/Flutter.framework
+ios/Flutter/Flutter.podspec
+ios/Flutter/Generated.xcconfig
+ios/Runner.xcworkspace/
+
+# Android build files
+android/.gradle/
+android/app/*.apk
+android/app/build/
+android/app/intermediates/
+android/app/outputs/
+
+# Flutter build files
+*.apk
+*.aab
+
+# Editor files
+.idea/
+.vscode/
+*.sublime-workspace
+*.sublime-project
+
+# OS generated files
+.DS_Store
+Thumbs.db
