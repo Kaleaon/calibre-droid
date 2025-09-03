@@ -1,6 +1,6 @@
 #!/bin/sh
 # This is a generated file; do not edit or check into version control.
-export "FLUTTER_ROOT=/home/jules/flutter_sdk/flutter"
+export "FLUTTER_ROOT=/tmp/flutter_sdk/flutter"
 export "FLUTTER_APPLICATION_PATH=/app/calibre_flutter_app"
 export "COCOAPODS_PARALLEL_CODE_SIGN=true"
 export "FLUTTER_TARGET=lib/main.dart"
