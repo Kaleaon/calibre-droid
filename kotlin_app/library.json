@@ -11,4 +11,17 @@
   "languages" : [ "en" ],
   "userMetadata" : { },
   "id" : 1
+}, {
+  "title" : "Unknown",
+  "authors" : [ "Evangelos Vlachogiannis" ],
+  "tags" : [ ],
+  "comments" : null,
+  "series" : null,
+  "seriesIndex" : null,
+  "rating" : null,
+  "publisher" : "OpenOffice.org 2.1",
+  "pubDate" : [ 2007, 2, 23, 15, 56, 37 ],
+  "languages" : [ "und" ],
+  "userMetadata" : { },
+  "id" : 2
 } ]

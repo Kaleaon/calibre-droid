@@ -12,6 +12,7 @@ dependencies {
     implementation("com.fasterxml.jackson.core:jackson-databind:2.15.2")
     implementation("com.fasterxml.jackson.module:jackson-module-kotlin:2.15.2")
     implementation("com.fasterxml.jackson.datatype:jackson-datatype-jsr310:2.15.2")
+    implementation("org.apache.pdfbox:pdfbox:2.0.29")
 }
 
 application {

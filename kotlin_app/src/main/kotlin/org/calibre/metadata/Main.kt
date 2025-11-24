@@ -22,6 +22,7 @@ fun runCommand(library: Library, args: Array<String>) {
         "remove" -> removeBook(library, args.getOrNull(1))
         "export" -> exportBook(library, args.drop(1).toTypedArray())
         "convert" -> convertBook(library, args.drop(1).toTypedArray())
+        "server" -> startServer(library, args.drop(1).toTypedArray())
         "help" -> printHelp()
         else -> println("Unknown command: $command. Try 'help'.")
     }
@@ -43,6 +44,18 @@ fun runInteractiveMode(library: Library) {
         
         runCommand(library, parts)
     }
+}
+
+fun startServer(library: Library, args: Array<String>) {
+    var port = 8080
+    if (args.isNotEmpty()) {
+        port = args[0].toIntOrNull() ?: 8080
+    }
+    val server = ContentServer(library, port)
+    server.start()
+    // Block to keep server alive
+    println("Press Enter to stop...")
+    System.`in`.read()
 }
 
 fun listBooks(library: Library) {
@@ -198,5 +211,6 @@ fun printHelp() {
     println("  remove <id>")
     println("  export <id> <destination_directory>")
     println("  convert <id> txt")
+    println("  server [port]")
     println("  exit")
 }

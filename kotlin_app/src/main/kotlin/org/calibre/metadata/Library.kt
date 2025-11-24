@@ -36,18 +36,25 @@ class Library(
     fun importBook(file: File): Int {
         if (!file.exists()) throw Exception("File not found: ${file.absolutePath}")
         
-        val parser = EpubParser()
-        val metadata = try {
-            parser.parseMetadata(file)
-        } catch (e: Exception) {
-            println("Warning: Could not parse metadata from EPUB (${e.message}). Using default.")
+        val parsers = listOf(EpubParser(), PdfParser())
+        val parser = parsers.find { it.canParse(file) }
+        
+        val metadata = if (parser != null) {
+            try {
+                parser.parseMetadata(file)
+            } catch (e: Exception) {
+                println("Warning: Could not parse metadata from ${file.name} (${e.message}). Using default.")
+                Metadata(title = file.nameWithoutExtension)
+            }
+        } else {
+            println("No parser found for ${file.extension}. Using filename as title.")
             Metadata(title = file.nameWithoutExtension)
         }
 
         val id = addBook(metadata)
         
-        // Simple storage strategy: library_files/ID.epub
-        val destFile = File(libraryDir, "$id.epub")
+        val extension = file.extension
+        val destFile = File(libraryDir, "$id.$extension")
         try {
             file.copyTo(destFile, overwrite = true)
             println("Saved book file to: ${destFile.path}")
@@ -63,8 +70,9 @@ class Library(
     }
     
     fun getBookFile(id: Int): File? {
-        val file = File(libraryDir, "$id.epub")
-        return if (file.exists()) file else null
+        // Try to find file with any extension
+        val files = libraryDir.listFiles { dir, name -> name.startsWith("$id.") }
+        return files?.firstOrNull()
     }
     
     fun exportBook(id: Int, destDir: File) {
@@ -72,11 +80,11 @@ class Library(
         if (!destDir.exists()) destDir.mkdirs()
         
         val metadata = getMetadata(id)
-        // Construct a nice filename: Author - Title.epub
         val author = metadata?.authors?.firstOrNull() ?: "Unknown"
         val title = metadata?.title ?: "Unknown"
-        // Sanitize filename
-        val safeName = "$author - $title.epub".replace("[\\\\/:*?\"<>|]".toRegex(), "_")
+        val extension = bookFile.extension
+        
+        val safeName = "$author - $title.$extension".replace("[\\\\/:*?\"<>|]".toRegex(), "_")
         
         val destFile = File(destDir, safeName)
         bookFile.copyTo(destFile, overwrite = true)
@@ -87,8 +95,8 @@ class Library(
         if (books.remove(id) != null) {
             save()
             // Also delete the file
-            val file = File(libraryDir, "$id.epub")
-            if (file.exists()) {
+            val file = getBookFile(id)
+            if (file != null && file.exists()) {
                 file.delete()
             }
             return true
@@ -99,7 +107,6 @@ class Library(
     fun search(query: String): List<Metadata> {
         val lowerQuery = query.lowercase()
         
-        // Check for "field:value" syntax
         if (lowerQuery.contains(":")) {
             val parts = lowerQuery.split(":", limit = 2)
             val field = parts[0].trim()
@@ -109,7 +116,7 @@ class Library(
                 "title" -> books.values.filter { it.title.lowercase().contains(value) }
                 "author", "authors" -> books.values.filter { book -> book.authors.any { it.lowercase().contains(value) } }
                 "tag", "tags" -> books.values.filter { book -> book.tags.any { it.lowercase().contains(value) } }
-                else -> emptyList() // Unknown field
+                else -> emptyList()
             }.sortedBy { it.id }
         }
 
@@ -138,7 +145,6 @@ class Library(
                 val loadedBooks: List<Metadata> = mapper.readValue(storageFile)
                 loadedBooks.forEach { book ->
                     val id = book.id ?: nextId.getAndIncrement()
-                    // Ensure we don't overwrite existing IDs if we re-load
                     if (id >= nextId.get()) {
                         nextId.set(id + 1)
                     }
