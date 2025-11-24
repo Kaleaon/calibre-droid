@@ -6,7 +6,18 @@ import java.util.Scanner
 fun main(args: Array<String>) {
     val library = Library()
 
-    if (args.isEmpty()) {
+    if (args.isNotEmpty() && args[0] == "gui") {
+        try {
+            System.setProperty("java.awt.headless", "false")
+            val gui = org.calibre.gui.DesktopGui(library)
+            gui.isVisible = true
+        } catch (e: java.awt.HeadlessException) {
+            println("Cannot start GUI: Headless environment detected.")
+        } catch (e: Exception) {
+            println("Error starting GUI: ${e.message}")
+            e.printStackTrace()
+        }
+    } else if (args.isEmpty()) {
         runInteractiveMode(library)
     } else {
         runCommand(library, args)
@@ -23,6 +34,7 @@ fun runCommand(library: Library, args: Array<String>) {
         "export" -> exportBook(library, args.drop(1).toTypedArray())
         "convert" -> convertBook(library, args.drop(1).toTypedArray())
         "server" -> startServer(library, args.drop(1).toTypedArray())
+        "device" -> handleDevice(library, args.drop(1).toTypedArray())
         "help" -> printHelp()
         else -> println("Unknown command: $command. Try 'help'.")
     }
@@ -53,9 +65,47 @@ fun startServer(library: Library, args: Array<String>) {
     }
     val server = ContentServer(library, port)
     server.start()
-    // Block to keep server alive
     println("Press Enter to stop...")
     System.`in`.read()
+}
+
+fun handleDevice(library: Library, args: Array<String>) {
+    if (args.isEmpty()) {
+        println("Usage: device <path_to_folder> [sync <book_id>]")
+        return
+    }
+    
+    val folder = File(args[0])
+    val driver = org.calibre.devices.LocalFolderDriver(folder)
+    
+    if (!driver.isConnected()) {
+        println("Device folder not found or invalid.")
+        return
+    }
+    
+    if (args.size > 1 && args[1] == "sync") {
+        if (args.size < 3) {
+            println("Usage: device <path> sync <book_id>")
+            return
+        }
+        try {
+            val id = args[2].toInt()
+            val bookFile = library.getBookFile(id)
+            val metadata = library.getMetadata(id)
+            
+            if (bookFile != null && metadata != null) {
+                driver.addBook(bookFile, metadata)
+                println("Synced book $id to device folder.")
+            } else {
+                println("Book not found.")
+            }
+        } catch (e: Exception) {
+            println("Sync failed: ${e.message}")
+        }
+    } else {
+        println("Books on device (${driver.name}):")
+        driver.getBooks().forEach { println("- ${it.title}") }
+    }
 }
 
 fun listBooks(library: Library) {
@@ -163,17 +213,12 @@ fun exportBook(library: Library, args: Array<String>) {
 
 fun convertBook(library: Library, args: Array<String>) {
     if (args.size < 2) {
-        println("Usage: convert <id> <format> (only 'txt' supported)")
+        println("Usage: convert <id> <format> (txt, html)")
         return
     }
     
     val idStr = args[0]
     val format = args[1].lowercase()
-    
-    if (format != "txt") {
-        println("Only 'txt' format is currently supported.")
-        return
-    }
     
     try {
         val id = idStr.toInt()
@@ -186,13 +231,11 @@ fun convertBook(library: Library, args: Array<String>) {
         
         val metadata = library.getMetadata(id)
         val title = metadata?.title ?: "converted"
-        val outFile = File("${title.replace(" ", "_")}.txt")
+        val safeTitle = title.replace("[^a-zA-Z0-9.-]".toRegex(), "_")
+        val outFile = File("${safeTitle}.$format")
         
-        println("Converting book $id to TEXT...")
-        val converter = TextConverter()
-        converter.convertEpubToText(bookFile, outFile)
-        
-        println("Conversion complete: ${outFile.absolutePath}")
+        val pipeline = org.calibre.conversion.ConversionPipeline()
+        pipeline.convert(bookFile, format, outFile)
         
     } catch (e: NumberFormatException) {
         println("Invalid ID")
@@ -204,13 +247,15 @@ fun convertBook(library: Library, args: Array<String>) {
 
 fun printHelp() {
     println("Commands:")
+    println("  gui")
     println("  list")
     println("  add <file_path>")
     println("  add --title <title> --author <author>")
     println("  search <query> OR <field>:<value>")
     println("  remove <id>")
     println("  export <id> <destination_directory>")
-    println("  convert <id> txt")
+    println("  convert <id> <format> (txt, html)")
     println("  server [port]")
+    println("  device <folder> [sync <id>]")
     println("  exit")
 }
