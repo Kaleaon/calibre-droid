@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Calibre Android</string>
+    <string name="menu_search">Search</string>
+    <string name="menu_add">Add Book</string>
+    <string name="no_books">No books in library</string>
+    <string name="title_activity_detail">Book Details</string>
+</resources>
