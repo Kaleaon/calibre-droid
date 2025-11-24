@@ -21,6 +21,7 @@ A comprehensive port of Calibre functionalities to Kotlin, including Desktop, An
 
 ### 3. Library Management
 - **Persistent Database**: JSON-based metadata storage.
+- **SQLite Import**: Ability to import metadata from existing Calibre `metadata.db` files.
 - **File Management**: Organized storage of book files.
 - **Search**: Advanced search (field:value).
 
@@ -49,6 +50,9 @@ cd kotlin_app
 # Sync to Device
 mkdir my_device
 ../tools/gradle-8.5/bin/gradle run --args="device my_device sync 1"
+
+# Import from existing Calibre DB
+../tools/gradle-8.5/bin/gradle run --args="import-db /path/to/calibre/metadata.db"
 
 # Start Web Server
 ../tools/gradle-8.5/bin/gradle run --args="server 8080"

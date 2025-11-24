@@ -35,6 +35,7 @@ fun runCommand(library: Library, args: Array<String>) {
         "convert" -> convertBook(library, args.drop(1).toTypedArray())
         "server" -> startServer(library, args.drop(1).toTypedArray())
         "device" -> handleDevice(library, args.drop(1).toTypedArray())
+        "import-db" -> importDatabase(library, args.drop(1).toTypedArray())
         "help" -> printHelp()
         else -> println("Unknown command: $command. Try 'help'.")
     }
@@ -106,6 +107,21 @@ fun handleDevice(library: Library, args: Array<String>) {
         println("Books on device (${driver.name}):")
         driver.getBooks().forEach { println("- ${it.title}") }
     }
+}
+
+fun importDatabase(library: Library, args: Array<String>) {
+    if (args.isEmpty()) {
+        println("Usage: import-db <path_to_metadata.db>")
+        return
+    }
+    val dbFile = File(args[0])
+    if (!dbFile.exists()) {
+        println("Database file not found.")
+        return
+    }
+    
+    val service = org.calibre.db.DatabaseService(dbFile)
+    service.importToLibrary(library)
 }
 
 fun listBooks(library: Library) {
@@ -257,5 +273,6 @@ fun printHelp() {
     println("  convert <id> <format> (txt, html)")
     println("  server [port]")
     println("  device <folder> [sync <id>]")
+    println("  import-db <metadata.db>")
     println("  exit")
 }

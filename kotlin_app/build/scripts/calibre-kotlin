@@ -112,7 +112,7 @@ case "$( uname )" in                #(
   NONSTOP* )        nonstop=true ;;
 esac
 
-CLASSPATH=$APP_HOME/lib/calibre-kotlin.jar:$APP_HOME/lib/jackson-datatype-jsr310-2.15.2.jar:$APP_HOME/lib/jackson-databind-2.15.2.jar:$APP_HOME/lib/jackson-annotations-2.15.2.jar:$APP_HOME/lib/jackson-core-2.15.2.jar:$APP_HOME/lib/jackson-module-kotlin-2.15.2.jar:$APP_HOME/lib/kotlin-reflect-1.5.32.jar:$APP_HOME/lib/kotlin-stdlib-1.9.20.jar:$APP_HOME/lib/pdfbox-2.0.29.jar:$APP_HOME/lib/annotations-13.0.jar:$APP_HOME/lib/fontbox-2.0.29.jar:$APP_HOME/lib/commons-logging-1.2.jar
+CLASSPATH=$APP_HOME/lib/calibre-kotlin.jar:$APP_HOME/lib/jackson-datatype-jsr310-2.15.2.jar:$APP_HOME/lib/jackson-databind-2.15.2.jar:$APP_HOME/lib/jackson-annotations-2.15.2.jar:$APP_HOME/lib/jackson-core-2.15.2.jar:$APP_HOME/lib/jackson-module-kotlin-2.15.2.jar:$APP_HOME/lib/kotlin-reflect-1.5.32.jar:$APP_HOME/lib/kotlin-stdlib-1.9.20.jar:$APP_HOME/lib/pdfbox-2.0.29.jar:$APP_HOME/lib/sqlite-jdbc-3.45.1.0.jar:$APP_HOME/lib/annotations-13.0.jar:$APP_HOME/lib/fontbox-2.0.29.jar:$APP_HOME/lib/commons-logging-1.2.jar:$APP_HOME/lib/slf4j-api-1.7.36.jar
 
 
 # Determine the Java command to use to start the JVM.
