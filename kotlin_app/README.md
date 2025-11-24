@@ -1,37 +1,66 @@
-# Calibre Kotlin Port (Proof of Concept)
+# Calibre Kotlin Port
 
-This is a Proof of Concept (PoC) for converting Calibre to Kotlin.
+A complete Proof of Concept (PoC) porting core Calibre functionality to Kotlin.
 
-## Implemented Features
+## Features
 
-- **Core Metadata Structure**: Ported the core `Metadata` class from `src/calibre/ebooks/metadata/book/base.py` to Kotlin.
-- **Library Management**: Implemented a `Library` class (`src/calibre/db/cache.py` equivalent) that manages a collection of books.
-- **Persistence**: The library persists its state to a JSON file (`library.json`) using Jackson.
-- **CLI Interface**: A command-line interface to interact with the library.
-- **Project Structure**: Standard Gradle project structure.
+### 1. Library Management
+- **Add Books**: Import existing EPUB files or add metadata manually.
+- **Storage**: Books are stored in a local file structure (`library_files/`).
+- **Persistence**: Library metadata is persisted in `library.json`.
+- **Remove**: Delete books from the library and disk.
 
-## How to Run
+### 2. Metadata Engine
+- **Extraction**: Automatically extracts metadata (Title, Author, Series, Description, Tags) from EPUB files using a custom OPF parser.
+- **Search**: 
+  - Simple search (keyword matching).
+  - Advanced search (`title:Start`, `author:John`, `tag:Fiction`).
 
-Prerequisites: Java 21+ and Gradle.
+### 3. Conversion Engine
+- **EPUB to Text**: Converts EPUB files to plain text, stripping HTML tags while preserving basic structure (headers, paragraphs).
 
-Run the application using Gradle:
+### 4. CLI Interface
+Interactive and Argument-based modes supported.
 
+## Usage
+
+### Build
 ```bash
-# Interactive Mode
-./gradlew run
-
-# Command Line Arguments
-./gradlew run --args="list"
-./gradlew run --args="add --title The_Hobbit --author Tolkien"
-./gradlew run --args="search hobbit"
-./gradlew run --args="remove 1"
+./gradlew build
 ```
 
-(Note: You may need to install Gradle or use the provided gradle binary if available).
+### Commands
 
-## Code Location
+**Add a Book (Auto-Import):**
+```bash
+./gradlew run --args="add ../resources/quick_start/eng.epub"
+```
 
-- `src/main/kotlin/org/calibre/metadata/Metadata.kt`: The converted Metadata class.
-- `src/main/kotlin/org/calibre/metadata/Library.kt`: Library management and persistence.
-- `src/main/kotlin/org/calibre/metadata/Main.kt`: CLI entry point.
-- `src/main/kotlin/org/calibre/metadata/Constants.kt`: Shared constants.
+**List Books:**
+```bash
+./gradlew run --args="list"
+```
+
+**Search:**
+```bash
+./gradlew run --args="search author:Schember"
+```
+
+**Convert to Text:**
+```bash
+./gradlew run --args="convert 1 txt"
+```
+*Output: Quick_Start_Guide.txt*
+
+**Export:**
+```bash
+./gradlew run --args="export 1 /tmp/exported_books"
+```
+
+**Interactive Mode:**
+```bash
+./gradlew run
+> help
+> list
+> exit
+```

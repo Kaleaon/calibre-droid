@@ -1,1 +1,14 @@
-[ ]
+[ {
+  "title" : "Quick Start Guide",
+  "authors" : [ "John Schember" ],
+  "tags" : [ ],
+  "comments" : "calibre Quick Start Guide",
+  "series" : null,
+  "seriesIndex" : null,
+  "rating" : null,
+  "publisher" : null,
+  "pubDate" : null,
+  "languages" : [ "en" ],
+  "userMetadata" : { },
+  "id" : 1
+} ]
