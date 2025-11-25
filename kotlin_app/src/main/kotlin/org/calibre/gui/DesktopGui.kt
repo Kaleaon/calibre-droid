@@ -1,11 +1,15 @@
 package org.calibre.gui
 
+import javafx.application.Platform
+import javafx.embed.swing.JFXPanel
+import javafx.scene.Scene
+import javafx.scene.web.WebView
 import org.calibre.metadata.Library
 import org.calibre.metadata.Metadata
 import org.calibre.utils.Strings
 import java.awt.BorderLayout
 import java.awt.Dimension
-import java.awt.event.ActionEvent
+import java.io.File
 import javax.swing.*
 import javax.swing.table.DefaultTableModel
 
@@ -49,6 +53,9 @@ class DesktopGui(private val library: Library) : JFrame() {
         add(statusBar, BorderLayout.SOUTH)
 
         refreshTable()
+        
+        // Initialize JavaFX toolkit
+        JFXPanel()
     }
     
     private fun updateTexts() {
@@ -182,16 +189,22 @@ class DesktopGui(private val library: Library) : JFrame() {
     }
 }
 
-class ViewerFrame(file: java.io.File) : JFrame("Viewer") {
+class ViewerFrame(file: File) : JFrame("Viewer") {
     init {
-        size = Dimension(600, 800)
-        val editorPane = JEditorPane()
-        editorPane.isEditable = false
-        try {
-            editorPane.page = file.toURI().toURL()
-        } catch (e: Exception) {
-            editorPane.text = "Error loading page: ${e.message}"
+        size = Dimension(800, 800)
+        val jfxPanel = JFXPanel()
+        add(jfxPanel)
+        
+        Platform.runLater {
+            val webView = WebView()
+            val webEngine = webView.engine
+            try {
+                webEngine.load(file.toURI().toURL().toExternalForm())
+            } catch (e: Exception) {
+                println("Error loading page: ${e.message}")
+            }
+            val scene = Scene(webView)
+            jfxPanel.scene = scene
         }
-        add(JScrollPane(editorPane))
     }
 }

@@ -10,12 +10,13 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import org.calibre.android.databinding.ActivityMainBinding
+import org.calibre.metadata.Library
 import org.calibre.metadata.Metadata
 
 class MainActivity : AppCompatActivity() {
 
     private lateinit var binding: ActivityMainBinding
-    private lateinit var library: AndroidLibrary
+    private lateinit var library: Library
     private lateinit var adapter: BookAdapter
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -23,7 +24,7 @@ class MainActivity : AppCompatActivity() {
         binding = ActivityMainBinding.inflate(layoutInflater)
         setContentView(binding.root)
 
-        library = AndroidLibrary(this)
+        library = (application as CalibreApplication).library
         
         // Add dummy data if empty for testing
         if (library.getAllBooks().isEmpty()) {

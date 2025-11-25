@@ -3,10 +3,6 @@ package org.calibre.conversion
 import org.calibre.metadata.Metadata
 import java.io.File
 
-/**
- * Intermediate representation of a book in the conversion pipeline.
- * Similar to Calibre's OEB (Open eBook) structure.
- */
 data class OebBook(
     var metadata: Metadata,
     val spine: MutableList<OebItem> = mutableListOf(),
@@ -18,4 +14,16 @@ data class OebItem(
     val href: String,
     val mediaType: String,
     val file: File // Location of the temporary extracted file
-)
+) {
+    fun isImage(): Boolean {
+        return mediaType.startsWith("image/")
+    }
+
+    fun isCss(): Boolean {
+        return mediaType == "text/css"
+    }
+
+    fun isXhtml(): Boolean {
+        return mediaType == "application/xhtml+xml" || mediaType == "text/html"
+    }
+}
