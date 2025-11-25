@@ -1,74 +1,72 @@
 # Calibre Kotlin Port
 
-A comprehensive port of Calibre functionalities to Kotlin, including Desktop, Android, CLI, and Web Server.
-
-## Project Structure
-
-- **kotlin_app/**: The core project containing shared logic, desktop GUI, and CLI.
-- **android_app/**: Android application project (requires Android SDK).
+This is a comprehensive port of the Calibre ebook management software to Kotlin, designed for cross-platform compatibility (Desktop & Android).
 
 ## Features Implemented
 
-### 1. Conversion Pipeline
-- **Architecture**: Pluggable `InputPlugin` -> `OebBook` -> `OutputPlugin` pipeline.
-- **Input Formats**: EPUB (`EpubInput`), PDF (Metadata only).
-- **Output Formats**: Text (`TextOutput`), HTML (`HtmlOutput`).
-- **OEB Model**: Intermediate representation of books (Spine, Manifest, Metadata).
+### Core Library
+- **Metadata Management**: Title, Author, Tags, Series, Publisher, Description.
+- **Storage**: JSON-based metadata persistence + file-based book storage.
+- **Database Import**: Import existing Calibre `metadata.db` (SQLite).
+- **Format Support**:
+  - **EPUB**: Full metadata extraction and content processing.
+  - **PDF**: Metadata extraction (using PDFBox).
+  - **MOBI**: Metadata extraction and Text content extraction (PalmDoc decompression).
 
-### 2. Connectivity & Metadata
-- **Online Search**: Fetch metadata from **Google Books API**.
-- **Architecture**: Extensible `MetadataSource` interface.
+### Conversion Engine
+- **Pipeline**: Modular Input/Output plugin system.
+- **Inputs**: EPUB, MOBI, AZW3.
+- **Outputs**: Text, HTML (Single File).
+- **Architecture**: Uses `OebBook` intermediate representation (similar to Calibre's OEB).
 
-### 3. Device Management
-- **Driver Interface**: `DeviceDriver` abstraction for syncing with e-readers.
-- **Local Folder Driver**: Syncs books to a local directory.
+### User Interfaces
+1.  **CLI (Command Line)**:
+    - `add`: Import books (auto-detects format).
+    - `list`, `search`: Manage library.
+    - `convert`: Convert between formats.
+    - `server`: Start content server.
+    - `opds`: Test OPDS feed.
+    - `device`: Sync to local folders.
+    - `fetch-meta`: Download metadata from Google Books.
 
-### 4. Library Management
-- **Persistent Database**: JSON-based metadata storage.
-- **SQLite Import**: Import existing Calibre `metadata.db`.
-- **File Management**: Organized storage of book files.
-- **Search**: Advanced search (field:value).
+2.  **Desktop GUI (Java Swing)**:
+    - Visual library manager.
+    - Integrated Viewer (HTML-based).
+    - Online Metadata Download dialog.
+    - Internationalization (English/Spanish).
 
-### 5. User Interfaces
-- **CLI**: Robust command-line interface.
-- **Web Server**: Embedded HTTP server for browsing/downloading.
-- **Desktop GUI**: Java Swing-based interface with:
-  - **Internationalization**: English/Spanish support.
-  - **Viewer**: Built-in HTML-based ebook viewer.
-  - **Metadata Download**: Integrated online search dialog.
-- **Android App**: Modern Android UI with RecyclerView and Reader Mode.
+3.  **Content Server**:
+    - HTTP Server for browsing library.
+    - **OPDS Feed**: Standard feed for ebook reader apps (Moon+ Reader, etc.).
+    - Direct downloads.
 
-## Usage (Desktop/CLI)
+4.  **Android App (In Progress)**:
+    - Shared Core Logic.
+    - Basic Reader Activity.
 
+## Architecture
+- **Shared Module**: Core logic (Metadata, Conversion, Formats) shared between Desktop and Android.
+- **Desktop App**: Swing GUI + JDBC Database + CLI.
+- **Android App**: Native UI + WebView Reader (using shared conversion logic).
+
+## Usage
 ### Build
 ```bash
-cd kotlin_app
-../tools/gradle-8.5/bin/gradle build
+# Desktop
+./gradlew :kotlin_app:build
+
+# Android (requires SDK)
+./gradlew :android_app:assembleDebug
 ```
 
-### CLI Commands
+### Run CLI
 ```bash
-# Add a book
-../tools/gradle-8.5/bin/gradle run --args="add ../resources/quick_start/eng.epub"
-
-# Fetch Online Metadata
-../tools/gradle-8.5/bin/gradle run --args="fetch-meta 'The Hobbit'"
-
-# Convert a book
-../tools/gradle-8.5/bin/gradle run --args="convert 1 html"
-
-# Sync to Device
-../tools/gradle-8.5/bin/gradle run --args="device my_device sync 1"
-
-# Start Web Server
-../tools/gradle-8.5/bin/gradle run --args="server 8080"
+./gradlew :kotlin_app:run --args="help"
+./gradlew :kotlin_app:run --args="add mybook.epub"
+./gradlew :kotlin_app:run --args="server 8080"
 ```
 
-### GUI
+### Run GUI
 ```bash
-# Launch Desktop GUI (requires X11)
-../tools/gradle-8.5/bin/gradle run --args="gui"
+./gradlew :kotlin_app:run --args="gui"
 ```
-
-## Future Roadmap
-See `ROADMAP.md` for the detailed plan to reach feature parity with Calibre.

@@ -19,3 +19,10 @@ dependencies {
 application {
     mainClass.set("org.calibre.metadata.MainKt")
 }
+
+sourceSets {
+    main {
+        java.srcDir("../shared/src/main/kotlin")
+        resources.srcDir("../shared/src/main/resources")
+    }
+}

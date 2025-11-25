@@ -10,13 +10,16 @@ import java.util.concurrent.atomic.AtomicInteger
 
 class Library(
     private val storageFile: File = File("library.json"),
-    private val libraryDir: File = File("library_files")
+    private val libraryDir: File = File("library_files"),
+    extraParsers: List<MetadataParser> = emptyList()
 ) {
     private val books: MutableMap<Int, Metadata> = mutableMapOf()
     private val nextId = AtomicInteger(1)
     private val mapper: ObjectMapper = jacksonObjectMapper()
         .registerModule(JavaTimeModule())
         .enable(SerializationFeature.INDENT_OUTPUT)
+    
+    private val parsers = listOf(EpubParser(), MobiMetadataParser()) + extraParsers
 
     init {
         if (!libraryDir.exists()) {
@@ -36,7 +39,6 @@ class Library(
     fun importBook(file: File): Int {
         if (!file.exists()) throw Exception("File not found: ${file.absolutePath}")
         
-        val parsers = listOf(EpubParser(), PdfParser())
         val parser = parsers.find { it.canParse(file) }
         
         val metadata = if (parser != null) {
@@ -70,7 +72,6 @@ class Library(
     }
     
     fun getBookFile(id: Int): File? {
-        // Try to find file with any extension
         val files = libraryDir.listFiles { dir, name -> name.startsWith("$id.") }
         return files?.firstOrNull()
     }
@@ -94,7 +95,6 @@ class Library(
     fun removeBook(id: Int): Boolean {
         if (books.remove(id) != null) {
             save()
-            // Also delete the file
             val file = getBookFile(id)
             if (file != null && file.exists()) {
                 file.delete()

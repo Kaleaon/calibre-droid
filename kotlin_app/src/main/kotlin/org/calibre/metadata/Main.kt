@@ -1,10 +1,14 @@
 package org.calibre.metadata
 
 import java.io.File
+import java.net.URI
+import java.net.http.HttpClient
+import java.net.http.HttpRequest
+import java.net.http.HttpResponse
 import java.util.Scanner
 
 fun main(args: Array<String>) {
-    val library = Library()
+    val library = Library(extraParsers = listOf(DesktopPdfParser()))
 
     if (args.isNotEmpty() && args[0] == "gui") {
         try {
@@ -37,6 +41,7 @@ fun runCommand(library: Library, args: Array<String>) {
         "device" -> handleDevice(library, args.drop(1).toTypedArray())
         "import-db" -> importDatabase(library, args.drop(1).toTypedArray())
         "fetch-meta" -> fetchMetadata(args.drop(1).joinToString(" "))
+        "opds" -> testOpds(args.drop(1).toTypedArray())
         "help" -> printHelp()
         else -> println("Unknown command: $command. Try 'help'.")
     }
@@ -57,6 +62,31 @@ fun runInteractiveMode(library: Library) {
         if (parts[0] == "exit") break
         
         runCommand(library, parts)
+    }
+}
+
+fun testOpds(args: Array<String>) {
+    val port = if (args.isNotEmpty()) args[0].toIntOrNull() ?: 8080 else 8080
+    val url = "http://localhost:$port/opds"
+    println("Testing OPDS feed at $url...")
+    try {
+        val client = HttpClient.newHttpClient()
+        val request = HttpRequest.newBuilder(URI.create(url)).GET().build()
+        val response = client.send(request, HttpResponse.BodyHandlers.ofString())
+        
+        if (response.statusCode() == 200) {
+            println("Success! Feed content preview:")
+            println(response.body().take(500) + "...")
+        } else {
+            println("Failed with status code: ${response.statusCode()}")
+            if (response.statusCode() == 404) {
+                println("Is the server running?")
+            }
+        }
+    } catch (e: java.net.ConnectException) {
+        println("Connection refused. Make sure the server is running using 'server' command in another terminal.")
+    } catch (e: Exception) {
+        println("Error: ${e.message}")
     }
 }
 
@@ -293,6 +323,7 @@ fun printHelp() {
     println("  export <id> <destination_directory>")
     println("  convert <id> <format> (txt, html)")
     println("  server [port]")
+    println("  opds [port] (test client)")
     println("  device <folder> [sync <id>]")
     println("  import-db <metadata.db>")
     println("  fetch-meta <query>")

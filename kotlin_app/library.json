@@ -24,4 +24,17 @@
   "languages" : [ "und" ],
   "userMetadata" : { },
   "id" : 2
+}, {
+  "title" : "Test_Book",
+  "authors" : [ "Test_Author" ],
+  "tags" : [ ],
+  "comments" : null,
+  "series" : null,
+  "seriesIndex" : null,
+  "rating" : null,
+  "publisher" : null,
+  "pubDate" : null,
+  "languages" : [ "und" ],
+  "userMetadata" : { },
+  "id" : 3
 } ]

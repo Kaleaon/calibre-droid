@@ -4,7 +4,7 @@ import org.apache.pdfbox.pdmodel.PDDocument
 import java.io.File
 import java.util.Calendar
 
-class PdfParser : MetadataParser {
+class DesktopPdfParser : MetadataParser {
 
     override fun canParse(file: File): Boolean {
         return file.extension.equals("pdf", ignoreCase = true)

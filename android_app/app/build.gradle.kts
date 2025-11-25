@@ -17,6 +17,13 @@ android {
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
 
+    sourceSets {
+        getByName("main") {
+            java.srcDir("../../shared/src/main/kotlin")
+            resources.srcDir("../../shared/src/main/resources")
+        }
+    }
+
     buildTypes {
         release {
             isMinifyEnabled = false
@@ -36,6 +43,12 @@ android {
     buildFeatures {
         viewBinding = true
     }
+    packaging {
+        resources {
+            excludes += "/META-INF/{AL2.0,LGPL2.1}"
+            excludes += "META-INF/DEPENDENCIES"
+        }
+    }
 }
 
 dependencies {
@@ -45,15 +58,10 @@ dependencies {
     implementation("androidx.constraintlayout:constraintlayout:2.1.4")
     implementation("androidx.recyclerview:recyclerview:1.3.2")
     
-    // Shared logic dependencies (reused from kotlin_app)
     implementation("com.fasterxml.jackson.core:jackson-databind:2.15.2")
     implementation("com.fasterxml.jackson.module:jackson-module-kotlin:2.15.2")
     implementation("com.fasterxml.jackson.datatype:jackson-datatype-jsr310:2.15.2")
     
-    // Note: PDFBox-Android is usually preferred over standard PDFBox for Android, 
-    // but for PoC we will attempt to use the standard one or a compatible fork if needed.
-    // For now, we'll stick to the one we used, but it might have AWT dependencies.
-    // A safer bet for Android is 'com.tom-roush:pdfbox-android:2.0.27.0'
     implementation("com.tom-roush:pdfbox-android:2.0.27.0")
     
     testImplementation("junit:junit:4.13.2")

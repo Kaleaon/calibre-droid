@@ -1,0 +1,11 @@
+> Task :checkKotlinGradlePluginConfigurationErrors
+> Task :compileKotlin UP-TO-DATE
+> Task :compileJava NO-SOURCE
+> Task :processResources UP-TO-DATE
+> Task :classes UP-TO-DATE
+
+> Task :run
+Content Server started on port 8085
+Access at: http://localhost:8085/
+OPDS Feed: http://localhost:8085/opds
+Press Enter to stop...
