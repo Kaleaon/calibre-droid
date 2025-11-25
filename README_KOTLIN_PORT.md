@@ -28,8 +28,10 @@ A comprehensive port of Calibre functionalities to Kotlin, including Desktop, An
 ### 4. User Interfaces
 - **CLI**: Robust command-line interface for headless operations and scripting.
 - **Web Server**: Embedded HTTP server for browsing and downloading books.
-- **Desktop GUI**: Java Swing-based interface with Book List, Add, Remove, and Convert actions (auto-detects headless environment).
-- **Android App**: Modern Android UI with RecyclerView, details screen, and tablet optimization.
+- **Desktop GUI**: Java Swing-based interface with Book List, Add, Remove, Convert, and **Read** actions.
+  - **Internationalization**: Support for English and Spanish (extensible).
+  - **Viewer**: Basic HTML-based ebook viewer.
+- **Android App**: Modern Android UI with RecyclerView, details screen, and **Reader Mode**.
 
 ## Usage (Desktop/CLI)
 

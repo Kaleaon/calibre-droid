@@ -10,10 +10,6 @@ import org.calibre.metadata.Metadata
 import java.io.File
 import java.util.concurrent.atomic.AtomicInteger
 
-// Reuse the Metadata class from the pure Kotlin module. 
-// We'll copy it to the android app package for simplicity in this PoC, 
-// or we could set up a shared module. For now, copying logic.
-
 class AndroidLibrary(private val context: Context) {
     private val storageFile = File(context.filesDir, "library.json")
     private val libraryDir = File(context.filesDir, "library_files")
@@ -41,6 +37,11 @@ class AndroidLibrary(private val context: Context) {
 
     fun getMetadata(id: Int): Metadata? {
         return books[id]
+    }
+    
+    fun getBookFile(id: Int): File? {
+        val files = libraryDir.listFiles { dir, name -> name.startsWith("$id.") }
+        return files?.firstOrNull()
     }
 
     fun getAllBooks(): List<Metadata> {
