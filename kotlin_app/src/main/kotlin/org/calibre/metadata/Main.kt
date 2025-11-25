@@ -36,6 +36,7 @@ fun runCommand(library: Library, args: Array<String>) {
         "server" -> startServer(library, args.drop(1).toTypedArray())
         "device" -> handleDevice(library, args.drop(1).toTypedArray())
         "import-db" -> importDatabase(library, args.drop(1).toTypedArray())
+        "fetch-meta" -> fetchMetadata(args.drop(1).joinToString(" "))
         "help" -> printHelp()
         else -> println("Unknown command: $command. Try 'help'.")
     }
@@ -56,6 +57,26 @@ fun runInteractiveMode(library: Library) {
         if (parts[0] == "exit") break
         
         runCommand(library, parts)
+    }
+}
+
+fun fetchMetadata(query: String) {
+    if (query.isBlank()) {
+        println("Usage: fetch-meta <title/author>")
+        return
+    }
+    println("Searching Google Books for '$query'...")
+    val client = org.calibre.metadata.sources.GoogleBooksClient()
+    val results = client.search(query)
+    
+    if (results.isEmpty()) {
+        println("No results found.")
+    } else {
+        results.forEachIndexed { index, meta ->
+            println("[${index + 1}] ${meta.title} by ${meta.authors.joinToString(", ")}")
+            if (meta.publisher != null) println("    Publisher: ${meta.publisher}")
+            println("")
+        }
     }
 }
 
@@ -274,5 +295,6 @@ fun printHelp() {
     println("  server [port]")
     println("  device <folder> [sync <id>]")
     println("  import-db <metadata.db>")
+    println("  fetch-meta <query>")
     println("  exit")
 }

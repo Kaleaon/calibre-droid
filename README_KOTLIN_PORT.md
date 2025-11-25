@@ -15,23 +15,28 @@ A comprehensive port of Calibre functionalities to Kotlin, including Desktop, An
 - **Output Formats**: Text (`TextOutput`), HTML (`HtmlOutput`).
 - **OEB Model**: Intermediate representation of books (Spine, Manifest, Metadata).
 
-### 2. Device Management
-- **Driver Interface**: `DeviceDriver` abstraction for syncing with e-readers.
-- **Local Folder Driver**: Syncs books to a local directory (simulating a mounted device).
+### 2. Connectivity & Metadata
+- **Online Search**: Fetch metadata from **Google Books API**.
+- **Architecture**: Extensible `MetadataSource` interface.
 
-### 3. Library Management
+### 3. Device Management
+- **Driver Interface**: `DeviceDriver` abstraction for syncing with e-readers.
+- **Local Folder Driver**: Syncs books to a local directory.
+
+### 4. Library Management
 - **Persistent Database**: JSON-based metadata storage.
-- **SQLite Import**: Ability to import metadata from existing Calibre `metadata.db` files.
+- **SQLite Import**: Import existing Calibre `metadata.db`.
 - **File Management**: Organized storage of book files.
 - **Search**: Advanced search (field:value).
 
-### 4. User Interfaces
-- **CLI**: Robust command-line interface for headless operations and scripting.
-- **Web Server**: Embedded HTTP server for browsing and downloading books.
-- **Desktop GUI**: Java Swing-based interface with Book List, Add, Remove, Convert, and **Read** actions.
-  - **Internationalization**: Support for English and Spanish (extensible).
-  - **Viewer**: Basic HTML-based ebook viewer.
-- **Android App**: Modern Android UI with RecyclerView, details screen, and **Reader Mode**.
+### 5. User Interfaces
+- **CLI**: Robust command-line interface.
+- **Web Server**: Embedded HTTP server for browsing/downloading.
+- **Desktop GUI**: Java Swing-based interface with:
+  - **Internationalization**: English/Spanish support.
+  - **Viewer**: Built-in HTML-based ebook viewer.
+  - **Metadata Download**: Integrated online search dialog.
+- **Android App**: Modern Android UI with RecyclerView and Reader Mode.
 
 ## Usage (Desktop/CLI)
 
@@ -46,15 +51,14 @@ cd kotlin_app
 # Add a book
 ../tools/gradle-8.5/bin/gradle run --args="add ../resources/quick_start/eng.epub"
 
+# Fetch Online Metadata
+../tools/gradle-8.5/bin/gradle run --args="fetch-meta 'The Hobbit'"
+
 # Convert a book
 ../tools/gradle-8.5/bin/gradle run --args="convert 1 html"
 
 # Sync to Device
-mkdir my_device
 ../tools/gradle-8.5/bin/gradle run --args="device my_device sync 1"
-
-# Import from existing Calibre DB
-../tools/gradle-8.5/bin/gradle run --args="import-db /path/to/calibre/metadata.db"
 
 # Start Web Server
 ../tools/gradle-8.5/bin/gradle run --args="server 8080"
@@ -66,5 +70,5 @@ mkdir my_device
 ../tools/gradle-8.5/bin/gradle run --args="gui"
 ```
 
-## Android Build
-See `android_app/README.md` for Android-specific instructions.
+## Future Roadmap
+See `ROADMAP.md` for the detailed plan to reach feature parity with Calibre.

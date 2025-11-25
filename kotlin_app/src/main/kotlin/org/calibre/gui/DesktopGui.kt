@@ -32,11 +32,14 @@ class DesktopGui(private val library: Library) : JFrame() {
         btnConvert.addActionListener { convertBookAction() }
         val btnRead = JButton(Strings["menu.read"])
         btnRead.addActionListener { readBookAction() }
+        val btnMeta = JButton("Metadata") // Needs i18n
+        btnMeta.addActionListener { downloadMetadataAction() }
         
         toolbar.add(btnAdd)
         toolbar.add(btnRemove)
         toolbar.add(btnConvert)
         toolbar.add(btnRead)
+        toolbar.add(btnMeta)
         add(toolbar, BorderLayout.NORTH)
 
         // Table
@@ -137,16 +140,44 @@ class DesktopGui(private val library: Library) : JFrame() {
             val bookFile = library.getBookFile(id)
             if (bookFile == null) return
             
-            // Convert to HTML temporarily for viewing
             val tempFile = java.io.File.createTempFile("calibre_view", ".html")
             val pipeline = org.calibre.conversion.ConversionPipeline()
             pipeline.convert(bookFile, "html", tempFile)
             
-            // Open in Viewer
             ViewerFrame(tempFile).isVisible = true
             
         } catch (e: Exception) {
             JOptionPane.showMessageDialog(this, e.message)
+        }
+    }
+    
+    private fun downloadMetadataAction() {
+        val query = JOptionPane.showInputDialog(this, "Enter title/author:", "Download Metadata", JOptionPane.QUESTION_MESSAGE)
+        if (query != null && query.isNotBlank()) {
+            try {
+                val client = org.calibre.metadata.sources.GoogleBooksClient()
+                val results = client.search(query)
+                
+                if (results.isEmpty()) {
+                    JOptionPane.showMessageDialog(this, "No results found.")
+                    return
+                }
+                
+                val options = results.map { "${it.title} by ${it.authors.joinToString(", ")}" }.toTypedArray()
+                val selection = JOptionPane.showInputDialog(this, "Select book:", "Results", 
+                    JOptionPane.QUESTION_MESSAGE, null, options, options[0]) as String?
+                    
+                if (selection != null) {
+                    val index = options.indexOf(selection)
+                    val meta = results[index]
+                    val id = library.addBook(meta)
+                    JOptionPane.showMessageDialog(this, "Added book ID: $id")
+                    refreshTable()
+                }
+                
+            } catch (e: Exception) {
+                JOptionPane.showMessageDialog(this, "Error: ${e.message}")
+            }
         }
     }
 }
