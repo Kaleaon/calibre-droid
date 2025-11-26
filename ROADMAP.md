@@ -14,12 +14,12 @@
 ## Phase 2: Format Expansion & Fidelity (IN PROGRESS)
 - [x] **MOBI Input**: PalmDB/MOBI header parsing, text extraction.
 - [ ] **MOBI Fidelity**: Handle images, full HTML reconstruction from records.
-- [ ] **Conversion Engine**:
+- [x] **Conversion Engine**:
     - [x] `InputPlugin` / `OutputPlugin` interfaces.
-    - [x] `EpubInput`, `MobiInput`.
-    - [x] `TextOutput`, `HtmlOutput`.
-    - [ ] **OEB Improvements**: Enhance `OebBook` to handle CSS, Images, TOC properly.
-    - [ ] **CSS Flattening**: Implement CSS processing for simple readers.
+    - [x] `EpubInput`, `MobiInput`, `Azw3Input`, `TextInput`.
+    - [x] `TextOutput`, `HtmlOutput`, **`EpubOutput`**.
+    - [x] **OEB Improvements**: Enhanced `OebBook` to handle CSS, Images properly.
+    - [x] **CSS Flattening**: Implemented CSS processing via `CssProcessor`.
 
 ## Phase 3: Server & Connectivity (IN PROGRESS)
 - [x] **Content Server**:
@@ -39,18 +39,20 @@
     - [x] Add/Remove/Convert.
     - [x] Metadata Download.
     - [x] Simple Viewer (`JEditorPane`).
-- [ ] **Android App**:
+- [x] **Android App**:
     - [x] Basic Project Setup.
     - [x] Shared Core Logic integration.
-    - [ ] **Library UI**: RecyclerView with cover images.
-    - [ ] **Reader**: WebView-based reader using `HtmlOutput` logic.
-    - [ ] **Import**: SAF (Storage Access Framework) integration.
+    - [x] **Library UI**: RecyclerView with cover images.
+    - [x] **Reader**: WebView-based reader using `HtmlOutput` logic.
+    - [x] **Import**: SAF (Storage Access Framework) integration.
 
 ## Phase 5: The Editor (Future)
 - [ ] **Tweak Book**: Unzip EPUB, edit HTML/CSS, repack.
 - [ ] **Preview**: Live preview of edits.
 
-## Phase 6: Final Polish (Future)
+## Phase 6: Final Polish (IN PROGRESS)
+- [x] **Testing**: Basic unit tests for Library operations.
+- [ ] **Error Handling**: Comprehensive user-friendly error messages.
 - [ ] **I18n**: Complete translations (ES, DE, FR, etc.).
 - [ ] **Performance**: Lazy loading for large libraries.
 - [ ] **Packaging**: Native installers (MSI, DMG, APK).

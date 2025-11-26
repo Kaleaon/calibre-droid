@@ -121,3 +121,75 @@ class EpubParser : MetadataParser {
         return metadata
     }
 }
+
+object CoverExtractor {
+    
+    fun extractCoverFromEpub(epubFile: File): ByteArray? {
+        val zip = ZipFile(epubFile)
+        try {
+            val containerEntry = zip.getEntry("META-INF/container.xml") ?: return null
+            val containerDoc = parseXmlStatic(zip.getInputStream(containerEntry))
+            val opfPath = getOpfPathStatic(containerDoc) ?: return null
+            
+            val opfEntry = zip.getEntry(opfPath) ?: return null
+            val opfDoc = parseXmlStatic(zip.getInputStream(opfEntry))
+            
+            // Find cover image reference
+            val metadataElement = opfDoc.getElementsByTagNameNS("*", "metadata").item(0) as? Element
+            if (metadataElement != null) {
+                // Check for cover meta tag
+                val metas = metadataElement.getElementsByTagName("meta")
+                for (i in 0 until metas.length) {
+                    val meta = metas.item(i) as Element
+                    val name = meta.getAttribute("name")
+                    val content = meta.getAttribute("content")
+                    if (name == "cover" && content.isNotEmpty()) {
+                        // Find item with this id
+                        val items = opfDoc.getElementsByTagNameNS("*", "item")
+                        for (j in 0 until items.length) {
+                            val item = items.item(j) as Element
+                            if (item.getAttribute("id") == content) {
+                                val href = item.getAttribute("href")
+                                val opfDir = File(opfPath).parentFile
+                                val coverPath = if (opfDir != null) File(opfDir, href).path else href
+                                val coverEntry = zip.getEntry(coverPath) ?: continue
+                                return zip.getInputStream(coverEntry).readBytes()
+                            }
+                        }
+                    }
+                }
+            }
+            
+            // Fallback: look for common cover image names
+            val commonNames = listOf("cover.jpg", "cover.png", "cover.jpeg", "OEBPS/Images/cover.jpg")
+            for (name in commonNames) {
+                val entry = zip.getEntry(name) ?: continue
+                if (entry.name.contains("cover", ignoreCase = true)) {
+                    return zip.getInputStream(entry).readBytes()
+                }
+            }
+            
+        } catch (e: Exception) {
+            // Return null on any error
+        } finally {
+            zip.close()
+        }
+        return null
+    }
+    
+    private fun parseXmlStatic(inputStream: InputStream): Document {
+        val factory = DocumentBuilderFactory.newInstance()
+        factory.isValidating = false
+        factory.isNamespaceAware = true
+        factory.setFeature("http://apache.org/xml/features/nonvalidating/load-external-dtd", false)
+        return factory.newDocumentBuilder().parse(inputStream)
+    }
+    
+    private fun getOpfPathStatic(containerDoc: Document): String? {
+        val rootfiles = containerDoc.getElementsByTagName("rootfile")
+        if (rootfiles.length > 0) {
+            return (rootfiles.item(0) as Element).getAttribute("full-path")
+        }
+        return null
+    }
+}

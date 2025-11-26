@@ -4,7 +4,7 @@ import java.io.File
 
 class ConversionPipeline {
     private val inputPlugins = listOf(EpubInput(), MobiInput(), Azw3Input(), TextInput())
-    private val outputPlugins = listOf(TextOutput(), HtmlOutput())
+    private val outputPlugins = listOf(TextOutput(), HtmlOutput(), EpubOutput())
     
     fun convert(inputFile: File, outputFormat: String, outputFile: File) {
         val inputPlugin = inputPlugins.find { it.fileTypes.contains(inputFile.extension.lowercase()) }
