@@ -47,9 +47,10 @@
     - [x] **Reader**: WebView-based reader using `HtmlOutput` logic.
     - [x] **Import**: SAF (Storage Access Framework) integration.
 
-## Phase 5: The Editor (Future)
-- [ ] **Tweak Book**: Unzip EPUB, edit HTML/CSS, repack.
-- [ ] **Preview**: Live preview of edits.
+## Phase 5: The Editor (COMPLETED)
+- [x] **Tweak Book**: Unzip EPUB, edit HTML/CSS, repack.
+- [x] **CLI Interface**: Commands for unpack, edit, add, remove, repack, list.
+- [ ] **Preview**: Live preview of edits (future enhancement).
 
 ## Phase 6: Final Polish (COMPLETED)
 - [x] **Testing**: Comprehensive unit tests for parsers and Library operations.

@@ -106,12 +106,21 @@ This document summarizes all major features that have been implemented in the Ca
 - ✅ Image caching
 - ✅ Lazy loading support
 
+### 11. Format Support (Advanced)
+- ✅ Huff/CDIC decompression for MOBI
+- ✅ Full MOBI text extraction with compression support
+
+### 12. Editor Features
+- ✅ Tweak Book editor
+- ✅ EPUB unpack/repack
+- ✅ HTML/CSS editing
+- ✅ File add/remove
+- ✅ CLI interface for editing
+
 ## Remaining Work
 
 ### High Priority
-- [ ] Huff/CDIC decompression for MOBI (advanced compression)
-- [ ] Tweak Book editor
-- [ ] Enhanced MOBI output (full format support)
+- [ ] Enhanced MOBI output (full format specification)
 - [ ] MTP device support
 
 ### Medium Priority

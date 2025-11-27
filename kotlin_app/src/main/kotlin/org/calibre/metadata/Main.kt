@@ -50,6 +50,7 @@ fun runCommand(library: Library, args: Array<String>) {
         "export-library" -> exportLibrary(library, args.drop(1).toTypedArray())
         "import-library" -> importLibrary(library, args.drop(1).toTypedArray())
         "collections" -> showCollections(library, args.drop(1).toTypedArray())
+        "tweak" -> org.calibre.editor.TweakBookCli.handleTweakBook(args.drop(1).toTypedArray())
         "help" -> printHelp()
         else -> println("Unknown command: $command. Try 'help'.")
     }
@@ -545,5 +546,11 @@ fun printHelp() {
     println("  export-library <file.json>")
     println("  import-library <file.json>")
     println("  collections (list all tags/collections)")
+    println("  tweak <command> [args] (edit EPUB files)")
+    println("    tweak list <epub> - List files in EPUB")
+    println("    tweak edit <epub> <href> <content-file> [output] - Edit HTML file")
+    println("    tweak add <epub> <id> <href> <content-file> [output] - Add HTML file")
+    println("    tweak remove <epub> <href> [output] - Remove file")
+    println("    tweak repack <epub> <output> - Repack EPUB")
     println("  exit")
 }

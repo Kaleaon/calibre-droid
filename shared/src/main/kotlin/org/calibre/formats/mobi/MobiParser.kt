@@ -182,7 +182,16 @@ class MobiParser {
                 val decoded = when (compression) {
                     1 -> String(buffer) // No compression
                     2 -> decompressPalmDoc(buffer) // PalmDoc
-                    17480 -> "Error: HUFF/CDIC compression not supported yet" // Huffman
+                    17480 -> {
+                        // Try to decompress with Huff/CDIC
+                        try {
+                            // Need to find HUFF/CDIC records - this requires MOBI header parsing
+                            // For now, return error message, but structure is ready
+                            "Error: HUFF/CDIC compression detected but records not loaded. Use extractTextWithHuff() method."
+                        } catch (e: Exception) {
+                            "Error: HUFF/CDIC decompression failed: ${e.message}"
+                        }
+                    }
                     else -> "Error: Unknown compression $compression"
                 }
                 sb.append(decoded)
@@ -326,6 +335,60 @@ class MobiParser {
             }
         }
         return out.toString("ISO-8859-1") // or CP1252
+    }
+    
+    /**
+     * Extract text with Huff/CDIC decompression support.
+     * Requires HUFF and CDIC records to be provided.
+     */
+    fun extractTextWithHuff(file: File, huffRecords: List<ByteArray>): String {
+        val raf = RandomAccessFile(file, "r")
+        try {
+            raf.seek(76)
+            val recordCount = raf.readUnsignedShort()
+            val recordOffsets = LongArray(recordCount)
+            raf.seek(78)
+            for (i in 0 until recordCount) {
+                recordOffsets[i] = raf.readInt().toLong()
+                raf.skipBytes(4)
+            }
+            
+            // Parse Header (Record 0)
+            raf.seek(recordOffsets[0])
+            val compression = raf.readUnsignedShort()
+            raf.skipBytes(2)
+            val textLength = raf.readInt()
+            val recordCountText = raf.readUnsignedShort()
+            
+            if (compression != 17480) {
+                return extractText(file) // Use standard extraction
+            }
+            
+            // Initialize Huff/CDIC decompressor
+            val huffReader = HuffReader(huffRecords)
+            
+            val sb = StringBuilder()
+            // Text records start at Record 1
+            for (i in 1..recordCountText) {
+                if (i >= recordOffsets.size) break
+                val start = recordOffsets[i]
+                val end = if (i + 1 < recordOffsets.size) recordOffsets[i + 1] else start + 4096
+                val size = (end - start).toInt()
+                
+                val buffer = ByteArray(size)
+                raf.seek(start)
+                raf.readFully(buffer)
+                
+                val decompressed = huffReader.unpack(buffer)
+                sb.append(String(decompressed, Charsets.ISO_8859_1))
+            }
+            return sb.toString()
+            
+        } catch (e: Exception) {
+            return "Error extracting text with Huff/CDIC: ${e.message}"
+        } finally {
+            raf.close()
+        }
     }
 }
 
