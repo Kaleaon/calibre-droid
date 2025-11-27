@@ -16,26 +16,34 @@ This document summarizes all major features that have been implemented in the Ca
 #### Input Formats
 - ✅ EPUB
 - ✅ MOBI/AZW
-- ✅ AZW3
+- ✅ AZW3 (enhanced - text and image extraction with KF8 awareness)
 - ✅ PDF (Desktop)
-- ✅ TXT
+- ✅ TXT (enhanced - encoding detection, proper HTML escaping)
 - ✅ DOCX
 - ✅ RTF
 - ✅ FB2 (FictionBook)
+- ✅ HTML/OPF
+- ⚠️ LIT (placeholder - requires full parser)
+- ⚠️ LRF (placeholder - requires full parser)
+- ⚠️ PDB (placeholder - requires full parser)
 
 #### Output Formats
 - ✅ EPUB
 - ✅ HTML
 - ✅ TXT
 - ✅ PDF
-- ✅ MOBI (basic)
+- ✅ MOBI (enhanced - PDB format, MOBI header, EXTH records, PalmDoc compression)
 
 ### 3. Conversion Engine
 - ✅ Plugin-based architecture (InputPlugin/OutputPlugin)
 - ✅ OEB intermediate format
-- ✅ CSS processing and flattening
+- ✅ CSS processing and flattening with URL rewriting support
 - ✅ Image handling and embedding
 - ✅ Metadata preservation
+- ✅ Enhanced error handling and logging in conversion pipeline
+- ✅ Support for placeholder plugins with clear error messages
+- ✅ Encoding detection and proper HTML escaping in text processing
+- ✅ Improved content extraction with fallback handling
 
 ### 4. Search & Discovery
 - ✅ Basic search (title, author, tags, series)
@@ -120,7 +128,7 @@ This document summarizes all major features that have been implemented in the Ca
 ## Remaining Work
 
 ### High Priority
-- [ ] Enhanced MOBI output (full format specification)
+- [x] Enhanced MOBI output (full format specification) - Implemented with PDB header, MOBI header, EXTH records, and PalmDoc compression
 - [ ] MTP device support
 
 ### Medium Priority
