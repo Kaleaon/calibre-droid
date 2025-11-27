@@ -16,9 +16,9 @@ This document summarizes all major features that have been implemented in the Ca
 #### Input Formats
 - ✅ EPUB
 - ✅ MOBI/AZW
-- ✅ AZW3 (basic - metadata extraction)
+- ✅ AZW3 (enhanced - text and image extraction with KF8 awareness)
 - ✅ PDF (Desktop)
-- ✅ TXT
+- ✅ TXT (enhanced - encoding detection, proper HTML escaping)
 - ✅ DOCX
 - ✅ RTF
 - ✅ FB2 (FictionBook)
@@ -42,6 +42,8 @@ This document summarizes all major features that have been implemented in the Ca
 - ✅ Metadata preservation
 - ✅ Enhanced error handling and logging in conversion pipeline
 - ✅ Support for placeholder plugins with clear error messages
+- ✅ Encoding detection and proper HTML escaping in text processing
+- ✅ Improved content extraction with fallback handling
 
 ### 4. Search & Discovery
 - ✅ Basic search (title, author, tags, series)

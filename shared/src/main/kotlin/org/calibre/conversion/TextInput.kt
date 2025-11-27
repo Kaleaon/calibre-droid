@@ -2,6 +2,8 @@ package org.calibre.conversion
 
 import org.calibre.metadata.Metadata
 import java.io.File
+import java.nio.charset.Charset
+import java.nio.charset.StandardCharsets
 
 class TextInput : InputPlugin {
     override val name = "Text Input"
@@ -11,19 +13,54 @@ class TextInput : InputPlugin {
         val metadata = Metadata(title = inputFile.nameWithoutExtension)
         val book = OebBook(metadata)
         
-        // Convert text to basic HTML
-        val text = inputFile.readText()
+        // Try to detect encoding, fallback to UTF-8
+        val text = try {
+            inputFile.readText(Charset.defaultCharset())
+        } catch (e: Exception) {
+            try {
+                inputFile.readText(StandardCharsets.UTF_8)
+            } catch (e2: Exception) {
+                inputFile.readText(Charsets.ISO_8859_1)
+            }
+        }
+        
+        // Convert text to basic HTML with proper escaping
         val lines = text.lines()
         
         val sb = StringBuilder()
-        sb.append("<html><head><title>${metadata.title}</title></head><body>")
+        sb.append("""<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+    <meta charset="UTF-8"/>
+    <title>${escapeHtml(metadata.title)}</title>
+</head>
+<body>""")
+        
+        // Group consecutive blank lines into single paragraph breaks
+        var inParagraph = false
         for (line in lines) {
-            if (line.isBlank()) {
+            val trimmed = line.trim()
+            if (trimmed.isEmpty()) {
+                if (inParagraph) {
+                    sb.append("</p>")
+                    inParagraph = false
+                }
                 sb.append("<br/>")
             } else {
-                sb.append("<p>${line}</p>")
+                if (!inParagraph) {
+                    sb.append("<p>")
+                    inParagraph = true
+                } else {
+                    sb.append(" ")
+                }
+                sb.append(escapeHtml(trimmed))
             }
         }
+        
+        if (inParagraph) {
+            sb.append("</p>")
+        }
+        
         sb.append("</body></html>")
         
         val contentFile = File(workDir, "content.html")
@@ -34,5 +71,14 @@ class TextInput : InputPlugin {
         book.spine.add(item)
         
         return book
+    }
+    
+    private fun escapeHtml(text: String): String {
+        return text
+            .replace("&", "&amp;")
+            .replace("<", "&lt;")
+            .replace(">", "&gt;")
+            .replace("\"", "&quot;")
+            .replace("'", "&#39;")
     }
 }
