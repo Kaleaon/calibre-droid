@@ -3,8 +3,8 @@ package org.calibre.conversion
 import java.io.File
 
 class ConversionPipeline {
-    private val inputPlugins = listOf(EpubInput(), MobiInput(), Azw3Input(), TextInput(), DocxInput(), RtfInput())
-    private val outputPlugins = listOf(TextOutput(), HtmlOutput(), EpubOutput())
+    private val inputPlugins = listOf(EpubInput(), MobiInput(), Azw3Input(), TextInput(), DocxInput(), RtfInput(), Fb2Input())
+    private val outputPlugins = listOf(TextOutput(), HtmlOutput(), EpubOutput(), PdfOutput(), MobiOutput())
     
     fun convert(inputFile: File, outputFormat: String, outputFile: File) {
         val inputPlugin = inputPlugins.find { it.fileTypes.contains(inputFile.extension.lowercase()) }

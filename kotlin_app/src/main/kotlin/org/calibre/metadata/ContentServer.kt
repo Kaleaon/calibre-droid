@@ -3,29 +3,46 @@ package org.calibre.metadata
 import com.sun.net.httpserver.HttpExchange
 import com.sun.net.httpserver.HttpHandler
 import com.sun.net.httpserver.HttpServer
+import org.calibre.server.AuthenticationManager
 import java.io.File
 import java.io.OutputStream
 import java.net.InetSocketAddress
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
 
-class ContentServer(private val library: Library, private val port: Int = 8080) {
+class ContentServer(
+    private val library: Library, 
+    private val port: Int = 8080,
+    private val requireAuth: Boolean = false
+) {
+    private val authManager = if (requireAuth) AuthenticationManager() else null
 
     fun start() {
         val server = HttpServer.create(InetSocketAddress(port), 0)
-        server.createContext("/", LibraryHandler(library))
-        server.createContext("/opds", OpdsHandler(library))
-        server.createContext("/download/", DownloadHandler(library))
+        server.createContext("/", LibraryHandler(library, authManager))
+        server.createContext("/opds", OpdsHandler(library, authManager))
+        server.createContext("/download/", DownloadHandler(library, authManager))
+        if (requireAuth) {
+            server.createContext("/login", LoginHandler(authManager!!))
+        }
         server.executor = null // creates a default executor
         server.start()
         println("Content Server started on port $port")
         println("Access at: http://localhost:$port/")
         println("OPDS Feed: http://localhost:$port/opds")
+        if (requireAuth) {
+            println("Authentication: Enabled")
+            println("Login endpoint: http://localhost:$port/login")
+        }
     }
 }
 
-class LibraryHandler(private val library: Library) : HttpHandler {
+class LibraryHandler(
+    private val library: Library,
+    private val authManager: AuthenticationManager?
+) : HttpHandler {
     override fun handle(t: HttpExchange) {
+        if (!checkAuth(t)) return
         if (t.requestURI.path != "/") {
              t.sendResponseHeaders(404, 0)
              t.close()
@@ -59,10 +76,29 @@ class LibraryHandler(private val library: Library) : HttpHandler {
         os.write(response.toByteArray())
         os.close()
     }
+    
+    private fun checkAuth(t: HttpExchange): Boolean {
+        val authManager = this.authManager ?: return true // No auth required
+        
+        val authHeader = t.requestHeaders.getFirst("Authorization")
+        val token = authManager.extractToken(authHeader)
+        
+        if (token == null || authManager.validateSession(token) == null) {
+            t.responseHeaders.add("WWW-Authenticate", "Bearer")
+            t.sendResponseHeaders(401, 0)
+            t.close()
+            return false
+        }
+        return true
+    }
 }
 
-class OpdsHandler(private val library: Library) : HttpHandler {
+class OpdsHandler(
+    private val library: Library,
+    private val authManager: AuthenticationManager?
+) : HttpHandler {
     override fun handle(t: HttpExchange) {
+        if (!checkAuth(t)) return
         val sb = StringBuilder()
         val updated = java.time.ZonedDateTime.now().format(DateTimeFormatter.ISO_OFFSET_DATE_TIME)
         
@@ -109,6 +145,21 @@ class OpdsHandler(private val library: Library) : HttpHandler {
         os.write(response.toByteArray(Charsets.UTF_8))
         os.close()
     }
+    
+    private fun checkAuth(t: HttpExchange): Boolean {
+        val authManager = this.authManager ?: return true // No auth required
+        
+        val authHeader = t.requestHeaders.getFirst("Authorization")
+        val token = authManager.extractToken(authHeader)
+        
+        if (token == null || authManager.validateSession(token) == null) {
+            t.responseHeaders.add("WWW-Authenticate", "Bearer")
+            t.sendResponseHeaders(401, 0)
+            t.close()
+            return false
+        }
+        return true
+    }
 
     private fun escapeXml(s: String): String {
         return s.replace("&", "&amp;")
@@ -119,8 +170,12 @@ class OpdsHandler(private val library: Library) : HttpHandler {
     }
 }
 
-class DownloadHandler(private val library: Library) : HttpHandler {
+class DownloadHandler(
+    private val library: Library,
+    private val authManager: AuthenticationManager?
+) : HttpHandler {
     override fun handle(t: HttpExchange) {
+        if (!checkAuth(t)) return
         val uri = t.requestURI.toString()
         // Expected /download/{id}
         val parts = uri.split("/")
@@ -162,5 +217,62 @@ class DownloadHandler(private val library: Library) : HttpHandler {
              t.sendResponseHeaders(400, 0)
              t.close()
         }
+    }
+    
+    private fun checkAuth(t: HttpExchange): Boolean {
+        val authManager = this.authManager ?: return true // No auth required
+        
+        val authHeader = t.requestHeaders.getFirst("Authorization")
+        val token = authManager.extractToken(authHeader)
+        
+        if (token == null || authManager.validateSession(token) == null) {
+            t.responseHeaders.add("WWW-Authenticate", "Bearer")
+            t.sendResponseHeaders(401, 0)
+            t.close()
+            return false
+        }
+        return true
+    }
+}
+
+class LoginHandler(private val authManager: AuthenticationManager) : HttpHandler {
+    override fun handle(t: HttpExchange) {
+        if (t.requestMethod != "POST") {
+            t.sendResponseHeaders(405, 0)
+            t.close()
+            return
+        }
+        
+        // Simple form-based login (in production, use proper form parsing)
+        val requestBody = t.requestBody.bufferedReader().readText()
+        val params = parseFormData(requestBody)
+        val username = params["username"] ?: ""
+        val password = params["password"] ?: ""
+        
+        val token = authManager.authenticate(username, password)
+        
+        if (token != null) {
+            val response = """{"token": "$token", "success": true}"""
+            t.responseHeaders.add("Content-Type", "application/json")
+            t.sendResponseHeaders(200, response.length.toLong())
+            t.responseBody.write(response.toByteArray())
+        } else {
+            val response = """{"success": false, "error": "Invalid credentials"}"""
+            t.responseHeaders.add("Content-Type", "application/json")
+            t.sendResponseHeaders(401, response.length.toLong())
+            t.responseBody.write(response.toByteArray())
+        }
+        t.close()
+    }
+    
+    private fun parseFormData(data: String): Map<String, String> {
+        val params = mutableMapOf<String, String>()
+        data.split("&").forEach { pair ->
+            val parts = pair.split("=", limit = 2)
+            if (parts.size == 2) {
+                params[parts[0]] = java.net.URLDecoder.decode(parts[1], "UTF-8")
+            }
+        }
+        return params
     }
 }

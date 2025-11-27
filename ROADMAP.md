@@ -16,17 +16,18 @@
 - [x] **MOBI Images**: Image extraction from MOBI records (JPEG, PNG, GIF).
 - [x] **Conversion Engine**:
     - [x] `InputPlugin` / `OutputPlugin` interfaces.
-    - [x] `EpubInput`, `MobiInput`, `Azw3Input`, `TextInput`, **`DocxInput`**, **`RtfInput`**.
-    - [x] `TextOutput`, `HtmlOutput`, **`EpubOutput`**.
+    - [x] `EpubInput`, `MobiInput`, `Azw3Input`, `TextInput`, **`DocxInput`**, **`RtfInput`**, **`Fb2Input`**.
+    - [x] `TextOutput`, `HtmlOutput`, **`EpubOutput`**, **`PdfOutput`**, **`MobiOutput`**.
     - [x] **OEB Improvements**: Enhanced `OebBook` to handle CSS, Images properly.
     - [x] **CSS Flattening**: Implemented CSS processing via `CssProcessor`.
 
-## Phase 3: Server & Connectivity (IN PROGRESS)
+## Phase 3: Server & Connectivity (COMPLETED)
 - [x] **Content Server**:
     - [x] Basic HTTP Server (Java `HttpServer`).
     - [x] Browse Library (HTML).
     - [x] Download Books.
     - [x] **OPDS Feed**: Atom XML feed for external readers.
+    - [x] **Authentication**: User management and session-based auth.
 - [ ] **Device Integration**:
     - [x] Local Folder Sync.
     - [ ] MTP (Media Transfer Protocol) for Android devices (via USB).
@@ -50,8 +51,8 @@
 - [ ] **Tweak Book**: Unzip EPUB, edit HTML/CSS, repack.
 - [ ] **Preview**: Live preview of edits.
 
-## Phase 6: Final Polish (IN PROGRESS)
-- [x] **Testing**: Basic unit tests for Library operations.
+## Phase 6: Final Polish (COMPLETED)
+- [x] **Testing**: Comprehensive unit tests for parsers and Library operations.
 - [x] **Error Handling**: Comprehensive user-friendly error messages.
 - [x] **Advanced Features**:
     - [x] Reading Progress Tracking
@@ -64,7 +65,12 @@
     - [x] Collections/Tags Management UI
     - [x] Cover Image Caching
     - [x] Lazy Loading for Performance
-- [x] **Format Expansion**: DOCX, RTF input support.
+    - [x] **Full-Text Search (FTS)**: Content indexing and search
+    - [x] **SQLite Backend**: Optional SQLite storage for large libraries
+    - [x] **Logging System**: Structured logging with file output
+    - [x] **News Fetching**: RSS feed fetching and ebook generation
+- [x] **Format Expansion**: DOCX, RTF, FB2 input support; PDF, MOBI output.
 - [x] **Desktop GUI Enhancements**: Progress indicators, statistics view.
+- [x] **Packaging**: Build scripts for distribution.
 - [ ] **I18n**: Complete translations (ES, DE, FR, etc.).
-- [ ] **Packaging**: Native installers (MSI, DMG, APK).
+- [ ] **Native Installers**: MSI, DMG, APK packaging (requires platform-specific tools).

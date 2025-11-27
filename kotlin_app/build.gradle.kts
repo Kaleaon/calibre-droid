@@ -15,6 +15,8 @@ dependencies {
     implementation("com.fasterxml.jackson.datatype:jackson-datatype-jsr310:2.15.2")
     implementation("org.apache.pdfbox:pdfbox:2.0.29")
     implementation("org.xerial:sqlite-jdbc:3.45.1.0")
+    implementation("com.openhtmltopdf:openhtmltopdf-pdfbox:1.1.24")
+    implementation("com.openhtmltopdf:openhtmltopdf-svg-support:1.1.24")
     
     testImplementation("org.junit.jupiter:junit-jupiter:5.9.2")
     testImplementation(kotlin("test"))

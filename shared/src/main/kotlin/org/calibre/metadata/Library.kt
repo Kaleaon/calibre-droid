@@ -5,13 +5,16 @@ import com.fasterxml.jackson.databind.SerializationFeature
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import com.fasterxml.jackson.module.kotlin.readValue
+import org.calibre.search.FullTextSearch
+import org.calibre.utils.Logger
 import java.io.File
 import java.util.concurrent.atomic.AtomicInteger
 
 class Library(
     private val storageFile: File = File("library.json"),
     private val libraryDir: File = File("library_files"),
-    extraParsers: List<MetadataParser> = emptyList()
+    extraParsers: List<MetadataParser> = emptyList(),
+    enableFts: Boolean = true
 ) {
     private val books: MutableMap<Int, Metadata> = mutableMapOf()
     private val nextId = AtomicInteger(1)
@@ -20,6 +23,7 @@ class Library(
         .enable(SerializationFeature.INDENT_OUTPUT)
     
     private val parsers = listOf(EpubParser(), MobiMetadataParser()) + extraParsers
+    private val fts: FullTextSearch? = if (enableFts) FullTextSearch(libraryDir) else null
 
     init {
         if (!libraryDir.exists()) {
@@ -64,9 +68,12 @@ class Library(
         val destFile = File(libraryDir, "$id.$extension")
         try {
             file.copyTo(destFile, overwrite = true)
-            println("Saved book file to: ${destFile.path}")
+            Logger.info("Saved book file to: ${destFile.path}")
+            
+            // Index for full-text search
+            fts?.indexBook(books[id]!!, destFile)
         } catch (e: Exception) {
-            println("Error copying file: ${e.message}")
+            Logger.error("Error copying file: ${e.message}", e)
         }
         
         return id
@@ -99,6 +106,7 @@ class Library(
 
     fun removeBook(id: Int): Boolean {
         if (books.remove(id) != null) {
+            fts?.removeBook(id)
             save()
             val file = getBookFile(id)
             if (file != null && file.exists()) {
@@ -107,6 +115,21 @@ class Library(
             return true
         }
         return false
+    }
+    
+    /**
+     * Full-text search across book content.
+     */
+    fun fullTextSearch(query: String, maxResults: Int = 50): List<Metadata> {
+        if (fts == null) {
+            Logger.warn("Full-text search is not enabled")
+            return emptyList()
+        }
+        
+        val results = fts.search(query, maxResults)
+        return results.mapNotNull { result ->
+            books[result.bookId]
+        }
     }
 
     fun search(query: String): List<Metadata> {
