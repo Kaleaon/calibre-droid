@@ -16,12 +16,16 @@ This document summarizes all major features that have been implemented in the Ca
 #### Input Formats
 - ✅ EPUB
 - ✅ MOBI/AZW
-- ✅ AZW3
+- ✅ AZW3 (basic - metadata extraction)
 - ✅ PDF (Desktop)
 - ✅ TXT
 - ✅ DOCX
 - ✅ RTF
 - ✅ FB2 (FictionBook)
+- ✅ HTML/OPF
+- ⚠️ LIT (placeholder - requires full parser)
+- ⚠️ LRF (placeholder - requires full parser)
+- ⚠️ PDB (placeholder - requires full parser)
 
 #### Output Formats
 - ✅ EPUB
@@ -33,9 +37,11 @@ This document summarizes all major features that have been implemented in the Ca
 ### 3. Conversion Engine
 - ✅ Plugin-based architecture (InputPlugin/OutputPlugin)
 - ✅ OEB intermediate format
-- ✅ CSS processing and flattening
+- ✅ CSS processing and flattening with URL rewriting support
 - ✅ Image handling and embedding
 - ✅ Metadata preservation
+- ✅ Enhanced error handling and logging in conversion pipeline
+- ✅ Support for placeholder plugins with clear error messages
 
 ### 4. Search & Discovery
 - ✅ Basic search (title, author, tags, series)
