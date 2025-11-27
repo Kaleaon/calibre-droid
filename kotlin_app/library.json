@@ -1,0 +1,40 @@
+[ {
+  "title" : "Quick Start Guide",
+  "authors" : [ "John Schember" ],
+  "tags" : [ ],
+  "comments" : "calibre Quick Start Guide",
+  "series" : null,
+  "seriesIndex" : null,
+  "rating" : null,
+  "publisher" : null,
+  "pubDate" : null,
+  "languages" : [ "en" ],
+  "userMetadata" : { },
+  "id" : 1
+}, {
+  "title" : "Unknown",
+  "authors" : [ "Evangelos Vlachogiannis" ],
+  "tags" : [ ],
+  "comments" : null,
+  "series" : null,
+  "seriesIndex" : null,
+  "rating" : null,
+  "publisher" : "OpenOffice.org 2.1",
+  "pubDate" : [ 2007, 2, 23, 15, 56, 37 ],
+  "languages" : [ "und" ],
+  "userMetadata" : { },
+  "id" : 2
+}, {
+  "title" : "Test_Book",
+  "authors" : [ "Test_Author" ],
+  "tags" : [ ],
+  "comments" : null,
+  "series" : null,
+  "seriesIndex" : null,
+  "rating" : null,
+  "publisher" : null,
+  "pubDate" : null,
+  "languages" : [ "und" ],
+  "userMetadata" : { },
+  "id" : 3
+} ]
