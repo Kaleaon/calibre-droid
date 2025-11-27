@@ -102,10 +102,22 @@ class ConversionPipeline {
         RtfInput(), 
         Fb2Input(),
         HtmlInput(),
+        HtmlzInput(),
+        PdfInput(),
+        OdtInput(),
+        TcrInput(),
+        PmlInput(),
+        ComicInput(),
         // Placeholder plugins (will throw UnsupportedOperationException with helpful message)
         LitInput(),
         LrfInput(),
-        PdbInput()
+        PdbInput(),
+        ChmInput(),
+        DjvuInput(),
+        Azw4Input(),
+        RbInput(),
+        SnbInput(),
+        RecipeInput()
     )
     private val outputPlugins = listOf(
         TextOutput(), 
@@ -115,7 +127,17 @@ class ConversionPipeline {
         MobiOutput(),
         DocxOutput(),
         Fb2Output(),
-        RtfOutput()
+        RtfOutput(),
+        OebOutput(),
+        HtmlzOutput(),
+        TcrOutput(),
+        PmlOutput(),
+        // Placeholder plugins (will throw UnsupportedOperationException)
+        LitOutput(),
+        LrfOutput(),
+        PdbOutput(),
+        RbOutput(),
+        SnbOutput()
     )
     
     /**
