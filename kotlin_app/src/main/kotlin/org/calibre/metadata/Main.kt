@@ -42,6 +42,11 @@ fun runCommand(library: Library, args: Array<String>) {
         "import-db" -> importDatabase(library, args.drop(1).toTypedArray())
         "fetch-meta" -> fetchMetadata(args.drop(1).joinToString(" "))
         "opds" -> testOpds(args.drop(1).toTypedArray())
+        "stats" -> showStatistics(library)
+        "bookmark" -> handleBookmark(library, args.drop(1).toTypedArray())
+        "rating" -> setRating(library, args.drop(1).toTypedArray())
+        "tag" -> handleTag(library, args.drop(1).toTypedArray())
+        "batch" -> handleBatch(library, args.drop(1).toTypedArray())
         "help" -> printHelp()
         else -> println("Unknown command: $command. Try 'help'.")
     }
@@ -312,6 +317,163 @@ fun convertBook(library: Library, args: Array<String>) {
     }
 }
 
+fun showStatistics(library: Library) {
+    val stats = library.getReadingStatistics()
+    println("=== Reading Statistics ===")
+    println("Total Books: ${stats.totalBooks}")
+    println("Read: ${stats.readBooks} (${String.format("%.1f", stats.readPercentage)}%)")
+    println("Unread: ${stats.unreadBooks}")
+    println("Total Reading Time: ${String.format("%.1f", stats.totalReadingTimeHours)} hours")
+    println("Total Bookmarks: ${stats.totalBookmarks}")
+    println("Average Rating: ${String.format("%.1f", stats.averageRating)}/5.0")
+    
+    val recent = library.getRecentlyRead(5)
+    if (recent.isNotEmpty()) {
+        println("\nRecently Read:")
+        recent.forEach { book ->
+            println("  - ${book.title} (${book.readingProgress.lastReadDate})")
+        }
+    }
+}
+
+fun handleBookmark(library: Library, args: Array<String>) {
+    if (args.isEmpty()) {
+        println("Usage: bookmark <id> [add <position> [note]] | list | remove <id> <bookmark_id>")
+        return
+    }
+    
+    when (args[0]) {
+        "add" -> {
+            if (args.size < 3) {
+                println("Usage: bookmark add <id> <position> [note]")
+                return
+            }
+            val id = args[1].toIntOrNull() ?: return println("Invalid ID")
+            val position = args[2]
+            val note = if (args.size > 3) args.drop(3).joinToString(" ") else null
+            try {
+                val bookmark = library.addBookmark(id, position, note)
+                println("Bookmark added: ${bookmark.id}")
+            } catch (e: Exception) {
+                println("Error: ${e.message}")
+            }
+        }
+        "list" -> {
+            if (args.size < 2) {
+                println("Usage: bookmark list <id>")
+                return
+            }
+            val id = args[1].toIntOrNull() ?: return println("Invalid ID")
+            val book = library.getMetadata(id)
+            if (book != null) {
+                if (book.bookmarks.isEmpty()) {
+                    println("No bookmarks")
+                } else {
+                    book.bookmarks.forEach { bm ->
+                        println("  ${bm.id}: ${bm.position} - ${bm.note ?: ""}")
+                    }
+                }
+            }
+        }
+        "remove" -> {
+            if (args.size < 3) {
+                println("Usage: bookmark remove <id> <bookmark_id>")
+                return
+            }
+            val id = args[1].toIntOrNull() ?: return println("Invalid ID")
+            val bookmarkId = args[2]
+            if (library.removeBookmark(id, bookmarkId)) {
+                println("Bookmark removed")
+            } else {
+                println("Bookmark not found")
+            }
+        }
+    }
+}
+
+fun setRating(library: Library, args: Array<String>) {
+    if (args.size < 2) {
+        println("Usage: rating <id> <0-5>")
+        return
+    }
+    val id = args[0].toIntOrNull() ?: return println("Invalid ID")
+    val rating = args[1].toDoubleOrNull()?.coerceIn(0.0, 5.0) ?: return println("Invalid rating (0-5)")
+    library.setRating(id, rating)
+    println("Rating set to $rating")
+}
+
+fun handleTag(library: Library, args: Array<String>) {
+    if (args.isEmpty()) {
+        println("Usage: tag <add|remove|list> <id> [tag_name]")
+        return
+    }
+    
+    when (args[0]) {
+        "add" -> {
+            if (args.size < 3) {
+                println("Usage: tag add <id> <tag>")
+                return
+            }
+            val id = args[1].toIntOrNull() ?: return println("Invalid ID")
+            library.addTag(id, args[2])
+            println("Tag added")
+        }
+        "remove" -> {
+            if (args.size < 3) {
+                println("Usage: tag remove <id> <tag>")
+                return
+            }
+            val id = args[1].toIntOrNull() ?: return println("Invalid ID")
+            library.removeTag(id, args[2])
+            println("Tag removed")
+        }
+        "list" -> {
+            if (args.size < 2) {
+                println("Usage: tag list <id>")
+                return
+            }
+            val id = args[1].toIntOrNull() ?: return println("Invalid ID")
+            val book = library.getMetadata(id)
+            if (book != null) {
+                if (book.tags.isEmpty()) {
+                    println("No tags")
+                } else {
+                    println("Tags: ${book.tags.joinToString(", ")}")
+                }
+            }
+        }
+    }
+}
+
+fun handleBatch(library: Library, args: Array<String>) {
+    if (args.isEmpty()) {
+        println("Usage: batch <remove|export> <id1,id2,...> [destination]")
+        return
+    }
+    
+    when (args[0]) {
+        "remove" -> {
+            if (args.size < 2) {
+                println("Usage: batch remove <id1,id2,...>")
+                return
+            }
+            val ids = args[1].split(",").mapNotNull { it.trim().toIntOrNull() }
+            val removed = library.batchRemove(ids)
+            println("Removed $removed books")
+        }
+        "export" -> {
+            if (args.size < 3) {
+                println("Usage: batch export <id1,id2,...> <destination>")
+                return
+            }
+            val ids = args[1].split(",").mapNotNull { it.trim().toIntOrNull() }
+            val destDir = File(args[2])
+            val exported = library.batchExport(ids, destDir)
+            println("Exported $exported books")
+        }
+    }
+}
+
 fun printHelp() {
     println("Commands:")
     println("  gui")
@@ -321,11 +483,16 @@ fun printHelp() {
     println("  search <query> OR <field>:<value>")
     println("  remove <id>")
     println("  export <id> <destination_directory>")
-    println("  convert <id> <format> (txt, html)")
+    println("  convert <id> <format> (txt, html, epub)")
     println("  server [port]")
     println("  opds [port] (test client)")
     println("  device <folder> [sync <id>]")
     println("  import-db <metadata.db>")
     println("  fetch-meta <query>")
+    println("  stats (show reading statistics)")
+    println("  bookmark <add|list|remove> <id> [args]")
+    println("  rating <id> <0-5>")
+    println("  tag <add|remove|list> <id> [tag]")
+    println("  batch <remove|export> <id1,id2,...> [destination]")
     println("  exit")
 }

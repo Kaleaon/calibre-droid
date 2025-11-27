@@ -2,6 +2,25 @@ package org.calibre.metadata
 
 import java.time.LocalDateTime
 
+data class ReadingProgress(
+    var currentPage: Int = 0,
+    var totalPages: Int = 0,
+    var lastReadPosition: String? = null, // CFI or percentage
+    var lastReadDate: LocalDateTime? = null,
+    var readingTimeMinutes: Int = 0
+) {
+    val progressPercent: Double
+        get() = if (totalPages > 0) (currentPage.toDouble() / totalPages) * 100.0 else 0.0
+}
+
+data class Bookmark(
+    val id: String,
+    val position: String, // CFI or page number
+    val note: String? = null,
+    val createdDate: LocalDateTime = LocalDateTime.now(),
+    val color: String? = null // For highlights
+)
+
 data class Metadata(
     var title: String = Constants.UNKNOWN_TITLE,
     var authors: MutableList<String> = mutableListOf(Constants.UNKNOWN_AUTHOR),
@@ -14,7 +33,11 @@ data class Metadata(
     var pubDate: LocalDateTime? = null,
     var languages: MutableList<String> = mutableListOf(Constants.UNDEFINED_LANGUAGE),
     var userMetadata: MutableMap<String, Any?> = mutableMapOf(),
-    var id: Int? = null
+    var id: Int? = null,
+    var readingProgress: ReadingProgress = ReadingProgress(),
+    var bookmarks: MutableList<Bookmark> = mutableListOf(),
+    var dateAdded: LocalDateTime = LocalDateTime.now(),
+    var dateModified: LocalDateTime = LocalDateTime.now()
 ) {
     fun isNull(field: String): Boolean {
         return when (field) {
@@ -46,6 +69,12 @@ data class Metadata(
         }
         if (publisher != null) {
              sb.append("Publisher: $publisher\n")
+        }
+        if (readingProgress.totalPages > 0) {
+            sb.append("Progress: ${readingProgress.currentPage}/${readingProgress.totalPages} (${String.format("%.1f", readingProgress.progressPercent)}%)\n")
+        }
+        if (bookmarks.isNotEmpty()) {
+            sb.append("Bookmarks: ${bookmarks.size}\n")
         }
         return sb.toString()
     }

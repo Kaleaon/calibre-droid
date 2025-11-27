@@ -4,12 +4,15 @@ import android.content.Intent
 import android.net.Uri
 import android.os.Bundle
 import android.view.LayoutInflater
+import android.view.Menu
+import android.view.MenuItem
 import android.view.View
 import android.view.ViewGroup
 import android.widget.ImageView
 import android.widget.TextView
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
+import androidx.appcompat.widget.SearchView
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import org.calibre.android.databinding.ActivityMainBinding
@@ -36,9 +39,87 @@ class MainActivity : AppCompatActivity() {
         library = (application as CalibreApplication).library
 
         setupRecyclerView()
+        setupSearch()
         
         binding.fabAdd.setOnClickListener {
             openFilePicker()
+        }
+    }
+    
+    override fun onCreateOptionsMenu(menu: Menu): Boolean {
+        menuInflater.inflate(R.menu.main_menu, menu)
+        
+        val searchItem = menu.findItem(R.id.action_search)
+        val searchView = searchItem?.actionView as? SearchView
+        searchView?.setOnQueryTextListener(object : SearchView.OnQueryTextListener {
+            override fun onQueryTextSubmit(query: String?): Boolean {
+                return false
+            }
+            
+            override fun onQueryTextChange(newText: String?): Boolean {
+                if (newText.isNullOrBlank()) {
+                    refreshList()
+                } else {
+                    val results = library.search(newText)
+                    adapter.updateData(results)
+                    updateEmptyView()
+                }
+                return true
+            }
+        })
+        
+        return true
+    }
+    
+    override fun onOptionsItemSelected(item: MenuItem): Boolean {
+        return when (item.itemId) {
+            R.id.action_statistics -> {
+                showStatistics()
+                true
+            }
+            R.id.action_recently_read -> {
+                showRecentlyRead()
+                true
+            }
+            else -> super.onOptionsItemSelected(item)
+        }
+    }
+    
+    private fun setupSearch() {
+        // Search is handled by SearchView in menu
+    }
+    
+    private fun showStatistics() {
+        val stats = library.getReadingStatistics()
+        val message = """
+            Total Books: ${stats.totalBooks}
+            Read: ${stats.readBooks}
+            Unread: ${stats.unreadBooks}
+            Reading Time: ${String.format("%.1f", stats.totalReadingTimeHours)} hours
+            Bookmarks: ${stats.totalBookmarks}
+            Average Rating: ${String.format("%.1f", stats.averageRating)}/5.0
+        """.trimIndent()
+        
+        android.app.AlertDialog.Builder(this)
+            .setTitle("Reading Statistics")
+            .setMessage(message)
+            .setPositiveButton("OK", null)
+            .show()
+    }
+    
+    private fun showRecentlyRead() {
+        val recent = library.getRecentlyRead(10)
+        if (recent.isNotEmpty()) {
+            val message = recent.joinToString("\n") { 
+                "${it.title} - ${it.readingProgress.lastReadDate?.toLocalDate()}"
+            }
+            android.app.AlertDialog.Builder(this)
+                .setTitle("Recently Read")
+                .setMessage(message)
+                .setPositiveButton("OK", null)
+                .show()
+        } else {
+            Toast.makeText(this, "No recently read books", Toast.LENGTH_SHORT).show()
         }
     }
     
@@ -182,6 +263,12 @@ class MainActivity : AppCompatActivity() {
             fun bind(book: Metadata, library: Library) {
                 titleView.text = book.title
                 authorView.text = book.authors.joinToString(", ")
+                
+                // Show reading progress if available
+                if (book.readingProgress.totalPages > 0) {
+                    val progress = book.readingProgress.progressPercent.toInt()
+                    titleView.text = "${book.title} ($progress%)"
+                }
                 
                 // Load cover image if available
                 coverView?.let { imageView ->

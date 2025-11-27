@@ -30,7 +30,12 @@ class Library(
 
     fun addBook(metadata: Metadata): Int {
         val id = nextId.getAndIncrement()
-        val newBook = metadata.copy(id = id)
+        val now = java.time.LocalDateTime.now()
+        val newBook = metadata.copy(
+            id = id,
+            dateAdded = metadata.dateAdded.takeIf { it != java.time.LocalDateTime.MIN } ?: now,
+            dateModified = now
+        )
         books[id] = newBook
         save()
         return id
@@ -116,6 +121,20 @@ class Library(
                 "title" -> books.values.filter { it.title.lowercase().contains(value) }
                 "author", "authors" -> books.values.filter { book -> book.authors.any { it.lowercase().contains(value) } }
                 "tag", "tags" -> books.values.filter { book -> book.tags.any { it.lowercase().contains(value) } }
+                "series" -> books.values.filter { it.series?.lowercase()?.contains(value) == true }
+                "rating" -> {
+                    val ratingValue = value.toDoubleOrNull()
+                    if (ratingValue != null) {
+                        books.values.filter { it.rating == ratingValue }
+                    } else emptyList()
+                }
+                "read" -> {
+                    when (value) {
+                        "true", "yes", "1" -> books.values.filter { it.readingProgress.currentPage > 0 }
+                        "false", "no", "0" -> books.values.filter { it.readingProgress.currentPage == 0 }
+                        else -> emptyList()
+                    }
+                }
                 else -> emptyList()
             }.sortedBy { it.id }
         }
@@ -123,12 +142,177 @@ class Library(
         return books.values.filter { book ->
             book.title.lowercase().contains(lowerQuery) ||
             book.authors.any { it.lowercase().contains(lowerQuery) } ||
-            book.tags.any { it.lowercase().contains(lowerQuery) }
+            book.tags.any { it.lowercase().contains(lowerQuery) } ||
+            book.series?.lowercase()?.contains(lowerQuery) == true
         }.sortedBy { it.id }
+    }
+    
+    fun advancedSearch(
+        title: String? = null,
+        author: String? = null,
+        series: String? = null,
+        tags: List<String>? = null,
+        minRating: Double? = null,
+        maxRating: Double? = null,
+        readStatus: Boolean? = null,
+        sortBy: String = "title"
+    ): List<Metadata> {
+        var results = books.values.toList()
+        
+        title?.let { 
+            val lower = it.lowercase()
+            results = results.filter { it.title.lowercase().contains(lower) }
+        }
+        
+        author?.let {
+            val lower = it.lowercase()
+            results = results.filter { book -> book.authors.any { auth -> auth.lowercase().contains(lower) } }
+        }
+        
+        series?.let {
+            val lower = it.lowercase()
+            results = results.filter { it.series?.lowercase()?.contains(lower) == true }
+        }
+        
+        tags?.let { tagList ->
+            results = results.filter { book -> tagList.any { tag -> book.tags.any { bookTag -> bookTag.lowercase().contains(tag.lowercase()) } } }
+        }
+        
+        minRating?.let { min ->
+            results = results.filter { (it.rating ?: 0.0) >= min }
+        }
+        
+        maxRating?.let { max ->
+            results = results.filter { (it.rating ?: 0.0) <= max }
+        }
+        
+        readStatus?.let { read ->
+            results = if (read) {
+                results.filter { it.readingProgress.currentPage > 0 }
+            } else {
+                results.filter { it.readingProgress.currentPage == 0 }
+            }
+        }
+        
+        return when (sortBy.lowercase()) {
+            "title" -> results.sortedBy { it.title }
+            "author" -> results.sortedBy { it.authors.firstOrNull() ?: "" }
+            "date" -> results.sortedByDescending { it.dateAdded }
+            "rating" -> results.sortedByDescending { it.rating ?: 0.0 }
+            "progress" -> results.sortedByDescending { it.readingProgress.progressPercent }
+            else -> results.sortedBy { it.id }
+        }
+    }
+    
+    fun updateReadingProgress(id: Int, currentPage: Int, totalPages: Int = 0, position: String? = null) {
+        val book = books[id] ?: return
+        book.readingProgress.currentPage = currentPage
+        if (totalPages > 0) book.readingProgress.totalPages = totalPages
+        book.readingProgress.lastReadPosition = position
+        book.readingProgress.lastReadDate = java.time.LocalDateTime.now()
+        book.dateModified = java.time.LocalDateTime.now()
+        save()
+    }
+    
+    fun addBookmark(id: Int, position: String, note: String? = null, color: String? = null): Bookmark {
+        val book = books[id] ?: throw Exception("Book not found")
+        val bookmark = Bookmark(
+            id = "${id}_${System.currentTimeMillis()}",
+            position = position,
+            note = note,
+            color = color
+        )
+        book.bookmarks.add(bookmark)
+        book.dateModified = java.time.LocalDateTime.now()
+        save()
+        return bookmark
+    }
+    
+    fun removeBookmark(id: Int, bookmarkId: String): Boolean {
+        val book = books[id] ?: return false
+        val removed = book.bookmarks.removeAll { it.id == bookmarkId }
+        if (removed) {
+            book.dateModified = java.time.LocalDateTime.now()
+            save()
+        }
+        return removed
+    }
+    
+    fun getBooksByTag(tag: String): List<Metadata> {
+        return books.values.filter { it.tags.contains(tag) }
+    }
+    
+    fun getRecentlyRead(limit: Int = 10): List<Metadata> {
+        return books.values
+            .filter { it.readingProgress.lastReadDate != null }
+            .sortedByDescending { it.readingProgress.lastReadDate }
+            .take(limit)
+    }
+    
+    fun getReadingStatistics(): ReadingStatistics {
+        val totalBooks = books.size
+        val readBooks = books.values.count { it.readingProgress.currentPage > 0 }
+        val totalReadingTime = books.values.sumOf { it.readingProgress.readingTimeMinutes }
+        val totalBookmarks = books.values.sumOf { it.bookmarks.size }
+        val averageRating = books.values.mapNotNull { it.rating }.average().takeIf { !it.isNaN() } ?: 0.0
+        
+        return ReadingStatistics(
+            totalBooks = totalBooks,
+            readBooks = readBooks,
+            unreadBooks = totalBooks - readBooks,
+            totalReadingTimeMinutes = totalReadingTime,
+            totalBookmarks = totalBookmarks,
+            averageRating = averageRating
+        )
     }
 
     fun getAllBooks(): List<Metadata> {
         return books.values.sortedBy { it.id }
+    }
+    
+    fun batchRemove(ids: List<Int>): Int {
+        var removed = 0
+        ids.forEach { id ->
+            if (removeBook(id)) removed++
+        }
+        return removed
+    }
+    
+    fun batchExport(ids: List<Int>, destDir: File): Int {
+        var exported = 0
+        ids.forEach { id ->
+            try {
+                exportBook(id, destDir)
+                exported++
+            } catch (e: Exception) {
+                System.err.println("Failed to export book $id: ${e.message}")
+            }
+        }
+        return exported
+    }
+    
+    fun updateMetadata(id: Int, updateFn: (Metadata) -> Unit): Boolean {
+        val book = books[id] ?: return false
+        updateFn(book)
+        book.dateModified = java.time.LocalDateTime.now()
+        save()
+        return true
+    }
+    
+    fun setRating(id: Int, rating: Double) {
+        updateMetadata(id) { it.rating = rating }
+    }
+    
+    fun addTag(id: Int, tag: String) {
+        updateMetadata(id) { 
+            if (!it.tags.contains(tag)) {
+                it.tags.add(tag)
+            }
+        }
+    }
+    
+    fun removeTag(id: Int, tag: String) {
+        updateMetadata(id) { it.tags.remove(tag) }
     }
 
     private fun save() {
