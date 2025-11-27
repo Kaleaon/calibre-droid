@@ -3,7 +3,7 @@ package org.calibre.conversion
 import java.io.File
 
 class ConversionPipeline {
-    private val inputPlugins = listOf(EpubInput(), MobiInput(), Azw3Input(), TextInput())
+    private val inputPlugins = listOf(EpubInput(), MobiInput(), Azw3Input(), TextInput(), DocxInput(), RtfInput())
     private val outputPlugins = listOf(TextOutput(), HtmlOutput(), EpubOutput())
     
     fun convert(inputFile: File, outputFormat: String, outputFile: File) {

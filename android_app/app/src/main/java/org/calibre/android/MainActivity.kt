@@ -236,9 +236,14 @@ class MainActivity : AppCompatActivity() {
         private var books: List<Metadata>,
         private val onItemClick: (Metadata) -> Unit
     ) : RecyclerView.Adapter<BookAdapter.BookViewHolder>() {
+        
+        // Lazy loading: only load covers for visible items
+        private val coverCache = mutableMapOf<Int, android.graphics.Bitmap?>()
 
         fun updateData(newBooks: List<Metadata>) {
             books = newBooks
+            // Clear cache when data changes
+            coverCache.clear()
             notifyDataSetChanged()
         }
 
@@ -249,7 +254,7 @@ class MainActivity : AppCompatActivity() {
 
         override fun onBindViewHolder(holder: BookViewHolder, position: Int) {
             val book = books[position]
-            holder.bind(book, library)
+            holder.bind(book, library, this)
             holder.itemView.setOnClickListener { onItemClick(book) }
         }
 
@@ -260,7 +265,7 @@ class MainActivity : AppCompatActivity() {
             private val authorView: TextView = itemView.findViewById(R.id.book_author)
             private val coverView: ImageView? = itemView.findViewById(R.id.book_cover)
 
-            fun bind(book: Metadata, library: Library) {
+            fun bind(book: Metadata, library: Library, adapter: BookAdapter) {
                 titleView.text = book.title
                 authorView.text = book.authors.joinToString(", ")
                 
@@ -270,23 +275,40 @@ class MainActivity : AppCompatActivity() {
                     titleView.text = "${book.title} ($progress%)"
                 }
                 
-                // Load cover image if available
+                // Load cover image with caching
                 coverView?.let { imageView ->
-                    val bookFile = library.getBookFile(book.id ?: 0)
-                    if (bookFile != null) {
-                        loadCoverImage(bookFile, imageView)
+                    val bookId = book.id ?: 0
+                    
+                    // Check cache first
+                    val cached = adapter.coverCache[bookId]
+                    if (cached != null) {
+                        imageView.setImageBitmap(cached)
                     } else {
+                        // Load placeholder first
                         imageView.setImageResource(android.R.drawable.ic_menu_gallery)
+                        
+                        // Load cover asynchronously (simplified - in production use coroutines/thread pool)
+                        loadCoverImageAsync(bookId, library, imageView, adapter)
                     }
                 }
             }
             
-            private fun loadCoverImage(bookFile: File, imageView: ImageView) {
+            private fun loadCoverImageAsync(
+                bookId: Int,
+                library: Library,
+                imageView: ImageView,
+                adapter: BookAdapter
+            ) {
+                // In a real app, use coroutines or background thread
+                // For now, load on current thread (could cause jank with many books)
                 try {
-                    if (bookFile.extension.equals("epub", ignoreCase = true)) {
+                    val bookFile = library.getBookFile(bookId)
+                    if (bookFile != null && bookFile.extension.equals("epub", ignoreCase = true)) {
                         val coverBytes = org.calibre.metadata.CoverExtractor.extractCoverFromEpub(bookFile)
                         if (coverBytes != null) {
                             val bitmap = android.graphics.BitmapFactory.decodeByteArray(coverBytes, 0, coverBytes.size)
+                            // Cache the bitmap
+                            adapter.coverCache[bookId] = bitmap
                             imageView.setImageBitmap(bitmap)
                             return
                         }
@@ -294,7 +316,7 @@ class MainActivity : AppCompatActivity() {
                 } catch (e: Exception) {
                     // Fall through to placeholder
                 }
-                imageView.setImageResource(android.R.drawable.ic_menu_gallery)
+                adapter.coverCache[bookId] = null // Cache null to avoid retrying
             }
         }
     }

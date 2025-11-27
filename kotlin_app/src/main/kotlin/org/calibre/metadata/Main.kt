@@ -47,6 +47,9 @@ fun runCommand(library: Library, args: Array<String>) {
         "rating" -> setRating(library, args.drop(1).toTypedArray())
         "tag" -> handleTag(library, args.drop(1).toTypedArray())
         "batch" -> handleBatch(library, args.drop(1).toTypedArray())
+        "export-library" -> exportLibrary(library, args.drop(1).toTypedArray())
+        "import-library" -> importLibrary(library, args.drop(1).toTypedArray())
+        "collections" -> showCollections(library, args.drop(1).toTypedArray())
         "help" -> printHelp()
         else -> println("Unknown command: $command. Try 'help'.")
     }
@@ -474,6 +477,51 @@ fun handleBatch(library: Library, args: Array<String>) {
     }
 }
 
+fun exportLibrary(library: Library, args: Array<String>) {
+    if (args.isEmpty()) {
+        println("Usage: export-library <output_file.json>")
+        return
+    }
+    try {
+        val destFile = File(args[0])
+        library.exportLibrary(destFile)
+        println("Library exported to: ${destFile.absolutePath}")
+    } catch (e: Exception) {
+        println("Export failed: ${e.message}")
+    }
+}
+
+fun importLibrary(library: Library, args: Array<String>) {
+    if (args.isEmpty()) {
+        println("Usage: import-library <library_file.json>")
+        return
+    }
+    try {
+        val sourceFile = File(args[0])
+        if (!sourceFile.exists()) {
+            println("Library file not found")
+            return
+        }
+        library.importLibrary(sourceFile)
+        println("Library imported successfully")
+    } catch (e: Exception) {
+        println("Import failed: ${e.message}")
+    }
+}
+
+fun showCollections(library: Library, args: Array<String>) {
+    val tags = library.getAllTags()
+    if (tags.isEmpty()) {
+        println("No tags/collections found")
+    } else {
+        println("Tags/Collections:")
+        tags.sorted().forEach { tag ->
+            val count = library.getBooksByTag(tag).size
+            println("  $tag ($count books)")
+        }
+    }
+}
+
 fun printHelp() {
     println("Commands:")
     println("  gui")
@@ -494,5 +542,8 @@ fun printHelp() {
     println("  rating <id> <0-5>")
     println("  tag <add|remove|list> <id> [tag]")
     println("  batch <remove|export> <id1,id2,...> [destination]")
+    println("  export-library <file.json>")
+    println("  import-library <file.json>")
+    println("  collections (list all tags/collections)")
     println("  exit")
 }

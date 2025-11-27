@@ -74,6 +74,73 @@ class MobiParser {
         }
     }
 
+    fun extractImages(file: File, outputDir: File): List<File> {
+        val images = mutableListOf<File>()
+        val raf = RandomAccessFile(file, "r")
+        try {
+            raf.seek(76)
+            val recordCount = raf.readUnsignedShort()
+            val recordOffsets = LongArray(recordCount)
+            raf.seek(78)
+            for (i in 0 until recordCount) {
+                recordOffsets[i] = raf.readInt().toLong()
+                raf.skipBytes(4)
+            }
+            
+            // Find image records (typically after text records)
+            // In MOBI, images are often in records after the text records
+            // We need to identify them by checking for image magic numbers
+            raf.seek(recordOffsets[0])
+            val compression = raf.readUnsignedShort()
+            raf.skipBytes(2)
+            val textLength = raf.readInt()
+            val recordCountText = raf.readUnsignedShort()
+            
+            // Image records typically start after text records
+            // Check records for image signatures (JPEG: FF D8 FF, PNG: 89 50 4E 47)
+            var imageIndex = 0
+            for (i in (recordCountText + 1) until recordCount) {
+                if (i >= recordOffsets.size - 1) break
+                val start = recordOffsets[i]
+                val end = recordOffsets[i + 1]
+                val size = (end - start).toInt()
+                
+                if (size > 10) { // Minimum size for an image
+                    val buffer = ByteArray(10)
+                    raf.seek(start)
+                    raf.readFully(buffer)
+                    
+                    // Check for image magic numbers
+                    val isJpeg = buffer[0] == 0xFF.toByte() && buffer[1] == 0xD8.toByte() && buffer[2] == 0xFF.toByte()
+                    val isPng = buffer[0] == 0x89.toByte() && buffer[1] == 0x50.toByte() && 
+                                buffer[2] == 0x4E.toByte() && buffer[3] == 0x47.toByte()
+                    val isGif = buffer[0] == 0x47.toByte() && buffer[1] == 0x49.toByte() && buffer[2] == 0x46.toByte()
+                    
+                    if (isJpeg || isPng || isGif) {
+                        val extension = when {
+                            isJpeg -> "jpg"
+                            isPng -> "png"
+                            isGif -> "gif"
+                            else -> "img"
+                        }
+                        
+                        val imageFile = File(outputDir, "image_${imageIndex++}.$extension")
+                        raf.seek(start)
+                        val imageData = ByteArray(size)
+                        raf.readFully(imageData)
+                        imageFile.writeBytes(imageData)
+                        images.add(imageFile)
+                    }
+                }
+            }
+        } catch (e: Exception) {
+            // Return what we found so far
+        } finally {
+            raf.close()
+        }
+        return images
+    }
+
     fun extractText(file: File): String {
         val raf = RandomAccessFile(file, "r")
         try {

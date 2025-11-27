@@ -314,6 +314,49 @@ class Library(
     fun removeTag(id: Int, tag: String) {
         updateMetadata(id) { it.tags.remove(tag) }
     }
+    
+    fun exportLibrary(destFile: File) {
+        try {
+            // Export metadata JSON
+            mapper.writeValue(destFile, books.values.toList())
+            
+            // Also create a manifest file listing all book files
+            val manifestFile = File(destFile.parentFile, "${destFile.nameWithoutExtension}_manifest.txt")
+            manifestFile.writeText(books.values.joinToString("\n") { book ->
+                "${book.id}: ${getBookFile(book.id ?: 0)?.absolutePath ?: "missing"}"
+            })
+        } catch (e: Exception) {
+            throw Exception("Failed to export library: ${e.message}")
+        }
+    }
+    
+    fun importLibrary(sourceFile: File) {
+        try {
+            val importedBooks: List<Metadata> = mapper.readValue(sourceFile)
+            var imported = 0
+            importedBooks.forEach { book ->
+                val id = book.id ?: nextId.getAndIncrement()
+                if (id >= nextId.get()) {
+                    nextId.set(id + 1)
+                }
+                books[id] = book.copy(id = id)
+                imported++
+            }
+            save()
+        } catch (e: Exception) {
+            throw Exception("Failed to import library: ${e.message}")
+        }
+    }
+    
+    fun getAllTags(): Set<String> {
+        return books.values.flatMap { it.tags }.toSet()
+    }
+    
+    fun getBooksByCollection(collectionName: String): List<Metadata> {
+        // Collections can be implemented as special tags or separate system
+        // For now, treat as tag
+        return getBooksByTag(collectionName)
+    }
 
     private fun save() {
         try {

@@ -15,16 +15,20 @@ This is a comprehensive port of the Calibre ebook management software to Kotlin,
 - **Format Support**:
   - **EPUB**: Full metadata extraction, content processing, cover extraction.
   - **PDF**: Metadata extraction (using PDFBox).
-  - **MOBI/AZW3**: Metadata extraction and Text content extraction (PalmDoc decompression).
+  - **MOBI/AZW3**: Metadata extraction, text extraction (PalmDoc decompression), **image extraction**.
+  - **DOCX**: Text extraction from Word documents.
+  - **RTF**: Text extraction from Rich Text Format files.
+  - **TXT**: Plain text file support.
 
 ### Conversion Engine
 - **Pipeline**: Modular Input/Output plugin system.
-- **Inputs**: EPUB, MOBI, AZW3, TXT.
+- **Inputs**: EPUB, MOBI, AZW3, TXT, **DOCX**, **RTF**.
 - **Outputs**: Text, HTML (Single File), **EPUB** (bidirectional conversion).
 - **Features**:
-  - Image extraction and embedding (Base64 for HTML, proper linking for EPUB).
-  - CSS processing and flattening.
-  - Full OEB intermediate representation with manifest, spine, and assets.
+  - **Image extraction**: From EPUB and MOBI files with proper embedding.
+  - **CSS processing**: Flattening and aggregation for consistent rendering.
+  - **Full OEB representation**: Complete manifest, spine, and asset management.
+  - **Format coverage**: 6 input formats, 3 output formats.
 - **Architecture**: Uses `OebBook` intermediate representation (similar to Calibre's OEB).
 
 ### User Interfaces
@@ -42,6 +46,9 @@ This is a comprehensive port of the Calibre ebook management software to Kotlin,
       - `rating`: Set book ratings (0-5).
       - `tag`: Manage tags (add/remove/list).
       - `batch`: Batch operations (remove/export multiple books).
+      - `export-library`: Export entire library metadata.
+      - `import-library`: Import library metadata.
+      - `collections`: List all tags/collections.
 
 2.  **Desktop GUI (Java Swing + JavaFX)**:
     - Visual library manager with book list.
@@ -125,3 +132,15 @@ This is a comprehensive port of the Calibre ebook management software to Kotlin,
 - **Margins**: Horizontal and vertical spacing
 - **Line Height**: Adjustable for comfortable reading
 - Settings persist across sessions
+
+### Library Management
+- **Export/Import**: Full library metadata export and import
+- **Collections**: Tag-based organization system
+- **Cover Caching**: Efficient cover image loading with caching
+- **Lazy Loading**: Optimized for large libraries
+
+### Format Support Expansion
+- **DOCX**: Microsoft Word document conversion
+- **RTF**: Rich Text Format support
+- **MOBI Images**: Enhanced image extraction from MOBI records
+- **EPUB Output**: Complete bidirectional EPUB conversion

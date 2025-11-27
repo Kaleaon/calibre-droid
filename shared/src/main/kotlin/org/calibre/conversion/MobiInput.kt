@@ -20,17 +20,35 @@ class MobiInput : InputPlugin {
         
         val book = OebBook(metadata)
         
-        // Create HTML from extracted text
-        // In a real converter, we would need to handle the markup inside the text 
-        // (MOBI can contain raw HTML-like tags).
-        // We wrap it in a basic HTML structure.
+        // Extract images
+        val imagesDir = File(workDir, "images")
+        imagesDir.mkdirs()
+        val images = parser.extractImages(inputFile, imagesDir)
         
+        // Add images to manifest
+        images.forEachIndexed { index, imageFile ->
+            val mimeType = when (imageFile.extension.lowercase()) {
+                "jpg", "jpeg" -> "image/jpeg"
+                "png" -> "image/png"
+                "gif" -> "image/gif"
+                else -> "image/png"
+            }
+            val item = OebItem("img_$index", "images/${imageFile.name}", mimeType, imageFile)
+            book.manifest["img_$index"] = item
+        }
+        
+        // Create HTML from extracted text with image references
         val contentFile = File(workDir, "content.html")
+        val imageRefs = images.mapIndexed { index, img ->
+            "<img src=\"images/${img.name}\" alt=\"Image $index\" />"
+        }.joinToString("\n")
+        
         val htmlContent = """
             <html xmlns="http://www.w3.org/1999/xhtml">
             <head><title>${metadata.title}</title></head>
             <body>
             $textContent
+            $imageRefs
             </body>
             </html>
         """.trimIndent()

@@ -38,12 +38,15 @@ class DesktopGui(private val library: Library) : JFrame() {
         btnRead.addActionListener { readBookAction() }
         val btnMeta = JButton("Metadata") // Needs i18n
         btnMeta.addActionListener { downloadMetadataAction() }
+        val btnStats = JButton("Statistics")
+        btnStats.addActionListener { showStatistics() }
         
         toolbar.add(btnAdd)
         toolbar.add(btnRemove)
         toolbar.add(btnConvert)
         toolbar.add(btnRead)
         toolbar.add(btnMeta)
+        toolbar.add(btnStats)
         add(toolbar, BorderLayout.NORTH)
 
         // Table
@@ -61,22 +64,36 @@ class DesktopGui(private val library: Library) : JFrame() {
     private fun updateTexts() {
         title = Strings["app.title"]
         tableModel.setColumnIdentifiers(arrayOf(
-            Strings["col.id"], Strings["col.title"], Strings["col.authors"], Strings["col.series"]
+            Strings["col.id"], Strings["col.title"], Strings["col.authors"], Strings["col.series"], "Progress", "Rating"
         ))
         statusBar.text = Strings["status.ready"]
     }
 
     private fun refreshTable() {
         tableModel.rowCount = 0
+        statusBar.text = "Loading books..."
         val books = library.getAllBooks()
         for (book in books) {
+            val progress = if (book.readingProgress.totalPages > 0) {
+                "${book.readingProgress.progressPercent.toInt()}%"
+            } else {
+                ""
+            }
+            val rating = if (book.rating != null) {
+                "★${String.format("%.1f", book.rating)}"
+            } else {
+                ""
+            }
             tableModel.addRow(arrayOf(
                 book.id,
                 book.title,
                 book.authors.joinToString(", "),
-                if (book.series != null) "${book.series} #${book.seriesIndex}" else ""
+                if (book.series != null) "${book.series} #${book.seriesIndex}" else "",
+                progress,
+                rating
             ))
         }
+        statusBar.text = Strings.format("status.books_count", books.size)
     }
 
     private fun addBookAction() {
@@ -156,6 +173,19 @@ class DesktopGui(private val library: Library) : JFrame() {
         } catch (e: Exception) {
             JOptionPane.showMessageDialog(this, e.message)
         }
+    }
+    
+    private fun showStatistics() {
+        val stats = library.getReadingStatistics()
+        val message = """
+            Total Books: ${stats.totalBooks}
+            Read: ${stats.readBooks} (${String.format("%.1f", stats.readPercentage)}%)
+            Unread: ${stats.unreadBooks}
+            Total Reading Time: ${String.format("%.1f", stats.totalReadingTimeHours)} hours
+            Total Bookmarks: ${stats.totalBookmarks}
+            Average Rating: ${String.format("%.1f", stats.averageRating)}/5.0
+        """.trimIndent()
+        JOptionPane.showMessageDialog(this, message, "Reading Statistics", JOptionPane.INFORMATION_MESSAGE)
     }
     
     private fun downloadMetadataAction() {
