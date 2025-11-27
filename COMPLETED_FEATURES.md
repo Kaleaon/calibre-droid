@@ -28,7 +28,7 @@ This document summarizes all major features that have been implemented in the Ca
 - ✅ HTML
 - ✅ TXT
 - ✅ PDF
-- ✅ MOBI (basic)
+- ✅ MOBI (enhanced - PDB format, MOBI header, EXTH records, PalmDoc compression)
 
 ### 3. Conversion Engine
 - ✅ Plugin-based architecture (InputPlugin/OutputPlugin)
@@ -120,7 +120,7 @@ This document summarizes all major features that have been implemented in the Ca
 ## Remaining Work
 
 ### High Priority
-- [ ] Enhanced MOBI output (full format specification)
+- [x] Enhanced MOBI output (full format specification) - Implemented with PDB header, MOBI header, EXTH records, and PalmDoc compression
 - [ ] MTP device support
 
 ### Medium Priority
