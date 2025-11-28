@@ -119,8 +119,8 @@ class FullTextSearch(private val libraryDir: File) {
         val results = bookScores.entries
             .sortedByDescending { it.value }
             .take(maxResults)
-            .map { (bookId, score) ->
-                val entry = index[bookId]!!
+            .mapNotNull { (bookId, score) ->
+                val entry = index[bookId] ?: return@mapNotNull null
                 val snippets = generateSnippets(entry, bookMatches[bookId] ?: emptyList())
                 
                 SearchResult(

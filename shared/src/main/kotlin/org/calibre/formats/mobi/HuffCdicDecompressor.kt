@@ -113,9 +113,7 @@ class HuffCdicDecompressor {
      * Decompress data using Huff/CDIC algorithm.
      */
     fun unpack(data: ByteArray): ByteArray {
-        if (dict1 == null) {
-            throw Exception("HUFF header not loaded")
-        }
+        val dictionary = dict1 ?: throw Exception("HUFF header not loaded")
         
         val output = ByteArrayOutputStream()
         var bitsLeft = data.size * 8
@@ -137,7 +135,7 @@ class HuffCdicDecompressor {
             
             // Get code length from dict1
             val codeByte = (code shr 24).toInt() and 0xFF
-            val entry = dict1!![codeByte]
+            val entry = dictionary[codeByte]
             var codeLen = entry.codeLen
             var term = entry.term
             var maxcode = entry.maxCode
