@@ -55,11 +55,19 @@ enum class LogLevel {
  * 
  * Provides structured logging with multiple levels and optional file output.
  * All log messages include timestamps and are formatted consistently.
+ * 
+ * ## Thread Safety
+ * 
+ * This logger is thread-safe:
+ * - File writes are synchronized to prevent interleaved log entries
+ * - Console output is inherently thread-safe (System.out/err are synchronized)
+ * - Multiple threads can safely call logging methods concurrently
  */
 object Logger {
     private var logFile: File? = null
     private var minLevel: LogLevel = LogLevel.INFO
     private val dateFormatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")
+    private val lock = Any() // Lock for synchronizing file writes
     
     /**
      * Initialize the logger with optional file output and minimum log level.
@@ -140,18 +148,20 @@ object Logger {
             else -> println(logMessage)
         }
         
-        // Write to file if configured
+        // Write to file if configured (synchronized to prevent interleaved writes)
         logFile?.let { file ->
-            try {
-                file.appendText("$logMessage\n")
-                throwable?.let {
-                    val sw = StringWriter()
-                    it.printStackTrace(PrintWriter(sw))
-                    file.appendText(sw.toString() + "\n")
+            synchronized(lock) {
+                try {
+                    file.appendText("$logMessage\n")
+                    throwable?.let {
+                        val sw = StringWriter()
+                        it.printStackTrace(PrintWriter(sw))
+                        file.appendText(sw.toString() + "\n")
+                    }
+                } catch (e: Exception) {
+                    // Silently fail if log file write fails to avoid breaking the application
+                    // In production, you might want to log this to stderr
                 }
-            } catch (e: Exception) {
-                // Silently fail if log file write fails to avoid breaking the application
-                // In production, you might want to log this to stderr
             }
         }
         
