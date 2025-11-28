@@ -77,11 +77,11 @@ class EpubOutput : OutputPlugin {
         book.metadata.authors.forEach { author ->
             addDcElement(doc, metadata, dcNs, "creator", author)
         }
-        if (book.metadata.publisher != null) {
-            addDcElement(doc, metadata, dcNs, "publisher", book.metadata.publisher!!)
+        book.metadata.publisher?.let { publisher ->
+            addDcElement(doc, metadata, dcNs, "publisher", publisher)
         }
-        if (book.metadata.comments != null) {
-            addDcElement(doc, metadata, dcNs, "description", book.metadata.comments!!)
+        book.metadata.comments?.let { comments ->
+            addDcElement(doc, metadata, dcNs, "description", comments)
         }
         book.metadata.languages.forEach { lang ->
             addDcElement(doc, metadata, dcNs, "language", lang)

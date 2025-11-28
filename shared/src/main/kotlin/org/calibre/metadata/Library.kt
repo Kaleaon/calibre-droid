@@ -54,11 +54,11 @@ class Library(
             try {
                 parser.parseMetadata(file)
             } catch (e: Exception) {
-                println("Warning: Could not parse metadata from ${file.name} (${e.message}). Using default.")
+                Logger.warn("Could not parse metadata from ${file.name} (${e.message}). Using default.", e)
                 Metadata(title = file.nameWithoutExtension)
             }
         } else {
-            println("No parser found for ${file.extension}. Using filename as title.")
+            Logger.warn("No parser found for ${file.extension}. Using filename as title.")
             Metadata(title = file.nameWithoutExtension)
         }
 
@@ -71,7 +71,9 @@ class Library(
             Logger.info("Saved book file to: ${destFile.path}")
             
             // Index for full-text search
-            fts?.indexBook(books[id]!!, destFile)
+            books[id]?.let { book ->
+                fts?.indexBook(book, destFile)
+            }
         } catch (e: Exception) {
             Logger.error("Error copying file: ${e.message}", e)
         }
@@ -101,7 +103,7 @@ class Library(
         
         val destFile = File(destDir, safeName)
         bookFile.copyTo(destFile, overwrite = true)
-        println("Exported to: ${destFile.absolutePath}")
+        Logger.info("Exported book $id to: ${destFile.absolutePath}")
     }
 
     fun removeBook(id: Int): Boolean {
@@ -308,7 +310,7 @@ class Library(
                 exportBook(id, destDir)
                 exported++
             } catch (e: Exception) {
-                System.err.println("Failed to export book $id: ${e.message}")
+                Logger.error("Failed to export book $id: ${e.message}", e)
             }
         }
         return exported
@@ -385,7 +387,7 @@ class Library(
         try {
             mapper.writeValue(storageFile, books.values.toList())
         } catch (e: Exception) {
-            System.err.println("Error saving library: ${e.message}")
+            Logger.error("Error saving library: ${e.message}", e)
         }
     }
 
@@ -401,7 +403,7 @@ class Library(
                     books[id] = book.copy(id = id)
                 }
             } catch (e: Exception) {
-                System.err.println("Error loading library: ${e.message}")
+                Logger.error("Error loading library: ${e.message}", e)
             }
         }
     }
