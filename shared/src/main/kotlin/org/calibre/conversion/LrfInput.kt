@@ -56,10 +56,13 @@ class LrfInput : InputPlugin {
         imageDir.mkdirs()
         
         for ((name, imageData) in parser.getImages()) {
-            val imageFile = File(imageDir, name)
+            // Sanitize filename to prevent path traversal attacks
+            val safeName = name.substringAfterLast('/').substringAfterLast('\\')
+                .replace("..", "_").replace(":", "_")
+            val imageFile = File(imageDir, safeName)
             imageFile.writeBytes(imageData)
             
-            val ext = name.substringAfterLast('.').lowercase()
+            val ext = safeName.substringAfterLast('.').lowercase()
             val mediaType = when (ext) {
                 "jpg", "jpeg" -> "image/jpeg"
                 "png" -> "image/png"
@@ -68,10 +71,10 @@ class LrfInput : InputPlugin {
                 else -> "image/jpeg"
             }
             
-            val imageId = name.replace(".", "_")
+            val imageId = safeName.replace(".", "_")
             book.manifest[imageId] = OebItem(
                 id = imageId,
-                href = "images/$name",
+                href = "images/$safeName",
                 mediaType = mediaType,
                 file = imageFile
             )

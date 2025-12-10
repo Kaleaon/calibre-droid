@@ -17,7 +17,7 @@ class CbrInput : InputPlugin {
     override val name = "CBR Input"
     override val author = "Calibre Kotlin"
     override val description = "Converts CBR (Comic Book RAR) archives to ebooks"
-    override val supportedFormats = listOf("cbr")
+    override val fileTypes = setOf("cbr")
     
     override fun convert(inputFile: File, workDir: File): OebBook {
         val data = inputFile.readBytes()

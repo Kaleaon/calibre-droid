@@ -83,10 +83,15 @@ class LrfParser(private val data: ByteArray) {
         val rawData = data.copyOfRange(offset, offset + actualSize)
         
         // LRF uses a simple XOR cipher for "encryption"
+        // The scramble key is applied as a byte-wise XOR with the low and high bytes alternating
         val key = header.scrambleKey
         if (key != 0.toShort()) {
+            val keyBytes = byteArrayOf(
+                (key.toInt() and 0xFF).toByte(),
+                ((key.toInt() shr 8) and 0xFF).toByte()
+            )
             for (i in rawData.indices) {
-                rawData[i] = (rawData[i].toInt() xor (key.toInt() shr (i % 16 * 8))).toByte()
+                rawData[i] = (rawData[i].toInt() xor keyBytes[i % 2].toInt()).toByte()
             }
         }
         

@@ -17,7 +17,7 @@ class DjvuInput : InputPlugin {
     override val name = "DjVu Input"
     override val author = "Calibre Kotlin"
     override val description = "Converts DjVu scanned documents to ebooks"
-    override val supportedFormats = listOf("djvu", "djv")
+    override val fileTypes = setOf("djvu", "djv")
     
     override fun convert(inputFile: File, workDir: File): OebBook {
         val data = inputFile.readBytes()

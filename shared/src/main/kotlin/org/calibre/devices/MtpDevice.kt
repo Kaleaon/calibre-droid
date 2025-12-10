@@ -256,6 +256,19 @@ class LinuxMtpDevice : MtpDeviceDriver() {
     
     private var mtpPath: Path? = null
     
+    // Maintain ID→Path mapping to properly resolve folder IDs
+    private val idToPath = mutableMapOf<Long, Path>()
+    private val pathToId = mutableMapOf<Path, Long>()
+    private var nextId = 1L
+    
+    private fun getOrCreateId(path: Path): Long {
+        return pathToId.getOrPut(path) {
+            val id = nextId++
+            idToPath[id] = path
+            id
+        }
+    }
+    
     override fun scanDevices(): List<MtpDeviceInfo> {
         val devices = mutableListOf<MtpDeviceInfo>()
         
@@ -311,12 +324,26 @@ class LinuxMtpDevice : MtpDeviceDriver() {
         mtpPath = Path.of(device.id)
         connectedDevice = device
         isOpen = Files.exists(mtpPath)
+        
+        // Clear ID mappings on new connection
+        idToPath.clear()
+        pathToId.clear()
+        nextId = 1L
+        
+        // Register root path with ID 0
+        mtpPath?.let { 
+            idToPath[0L] = it
+            pathToId[it] = 0L
+        }
     }
     
     override fun close() {
         mtpPath = null
         connectedDevice = null
         isOpen = false
+        idToPath.clear()
+        pathToId.clear()
+        nextId = 1L
     }
     
     override fun getStorages(): List<MtpDevice.StorageInfo> {
@@ -324,18 +351,24 @@ class LinuxMtpDevice : MtpDeviceDriver() {
         val storages = mutableListOf<MtpDevice.StorageInfo>()
         
         try {
-            for (storage in Files.list(path)) {
-                if (Files.isDirectory(storage)) {
-                    val store = Files.getFileStore(storage)
-                    storages.add(MtpDevice.StorageInfo(
-                        id = storage.hashCode().toLong(),
-                        name = storage.fileName.toString(),
-                        description = storage.fileName.toString(),
-                        totalSpace = store.totalSpace,
-                        freeSpace = store.usableSpace,
-                        storageType = if (storage.fileName.toString().contains("SD", ignoreCase = true))
-                            MtpDevice.StorageType.REMOVABLE else MtpDevice.StorageType.INTERNAL
-                    ))
+            // Use Files.list with use{} to ensure the stream is closed properly
+            Files.list(path).use { stream ->
+                stream.filter { Files.isDirectory(it) }.forEach { storage ->
+                    try {
+                        val storageId = getOrCreateId(storage)
+                        val store = Files.getFileStore(storage)
+                        storages.add(MtpDevice.StorageInfo(
+                            id = storageId,
+                            name = storage.fileName.toString(),
+                            description = storage.fileName.toString(),
+                            totalSpace = store.totalSpace,
+                            freeSpace = store.usableSpace,
+                            storageType = if (storage.fileName.toString().contains("SD", ignoreCase = true))
+                                MtpDevice.StorageType.REMOVABLE else MtpDevice.StorageType.INTERNAL
+                        ))
+                    } catch (e: Exception) {
+                        Logger.debug("Error reading storage info for $storage: ${e.message}")
+                    }
                 }
             }
         } catch (e: Exception) {
@@ -350,18 +383,27 @@ class LinuxMtpDevice : MtpDeviceDriver() {
         val files = mutableListOf<MtpDevice.MtpFile>()
         
         try {
-            val dirPath = if (folderId == 0L) path else Path.of(folderId.toString())
+            // Resolve folder path from ID mapping
+            val dirPath = if (folderId == 0L) path else idToPath[folderId] ?: return emptyList()
             
-            for (file in Files.list(dirPath)) {
-                files.add(MtpDevice.MtpFile(
-                    id = file.hashCode().toLong(),
-                    parentId = folderId,
-                    storageId = storageId,
-                    name = file.fileName.toString(),
-                    size = if (Files.isDirectory(file)) 0 else Files.size(file),
-                    modifiedTime = Files.getLastModifiedTime(file).toMillis(),
-                    isFolder = Files.isDirectory(file)
-                ))
+            // Use Files.list with use{} to ensure the stream is closed properly
+            Files.list(dirPath).use { stream ->
+                stream.forEach { file ->
+                    try {
+                        val fileId = getOrCreateId(file)
+                        files.add(MtpDevice.MtpFile(
+                            id = fileId,
+                            parentId = folderId,
+                            storageId = storageId,
+                            name = file.fileName.toString(),
+                            size = if (Files.isDirectory(file)) 0 else Files.size(file),
+                            modifiedTime = Files.getLastModifiedTime(file).toMillis(),
+                            isFolder = Files.isDirectory(file)
+                        ))
+                    } catch (e: Exception) {
+                        Logger.debug("Error reading file info for $file: ${e.message}")
+                    }
+                }
             }
         } catch (e: Exception) {
             Logger.warn("Error listing files: ${e.message}")
@@ -371,19 +413,30 @@ class LinuxMtpDevice : MtpDeviceDriver() {
     }
     
     override fun getFile(fileId: Long, output: OutputStream) {
-        // File ID is actually path hash - need to maintain ID->path mapping
-        // For now, this is a simplified implementation
-        Logger.warn("getFile not fully implemented for Linux MTP")
+        val filePath = idToPath[fileId]
+        if (filePath == null) {
+            Logger.warn("getFile: Unknown file ID $fileId")
+            return
+        }
+        
+        try {
+            Files.copy(filePath, output)
+        } catch (e: Exception) {
+            Logger.error("Error getting file: ${e.message}")
+        }
     }
     
     override fun putFile(storageId: Long, parentId: Long, name: String, input: InputStream, size: Long): MtpDevice.MtpFile {
-        val path = mtpPath ?: throw IllegalStateException("Device not connected")
-        val destPath = path.resolve(name)
+        // Resolve parent folder from ID mapping
+        val parentPath = idToPath[parentId] ?: mtpPath ?: throw IllegalStateException("Device not connected")
+        val destPath = parentPath.resolve(name)
         
         Files.copy(input, destPath)
         
+        val fileId = getOrCreateId(destPath)
+        
         return MtpDevice.MtpFile(
-            id = destPath.hashCode().toLong(),
+            id = fileId,
             parentId = parentId,
             storageId = storageId,
             name = name,
@@ -394,17 +447,32 @@ class LinuxMtpDevice : MtpDeviceDriver() {
     }
     
     override fun deleteFile(fileId: Long) {
-        Logger.warn("deleteFile not fully implemented for Linux MTP")
+        val filePath = idToPath[fileId]
+        if (filePath == null) {
+            Logger.warn("deleteFile: Unknown file ID $fileId")
+            return
+        }
+        
+        try {
+            Files.deleteIfExists(filePath)
+            idToPath.remove(fileId)
+            pathToId.remove(filePath)
+        } catch (e: Exception) {
+            Logger.error("Error deleting file: ${e.message}")
+        }
     }
     
     override fun createFolder(storageId: Long, parentId: Long, name: String): MtpDevice.MtpFile {
-        val path = mtpPath ?: throw IllegalStateException("Device not connected")
-        val dirPath = path.resolve(name)
+        // Resolve parent folder from ID mapping
+        val parentPath = idToPath[parentId] ?: mtpPath ?: throw IllegalStateException("Device not connected")
+        val dirPath = parentPath.resolve(name)
         
         Files.createDirectories(dirPath)
         
+        val folderId = getOrCreateId(dirPath)
+        
         return MtpDevice.MtpFile(
-            id = dirPath.hashCode().toLong(),
+            id = folderId,
             parentId = parentId,
             storageId = storageId,
             name = name,

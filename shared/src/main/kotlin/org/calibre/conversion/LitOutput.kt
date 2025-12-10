@@ -33,6 +33,17 @@ class LitOutput : OutputPlugin {
     }
     
     override fun convert(book: OebBook, outputFile: File, workDir: File) {
+        // LIT output requires ITSS-compliant directory structures and LZX compression
+        // which are not yet fully implemented. Generating malformed .lit files would
+        // break consuming applications.
+        throw UnsupportedOperationException(
+            "LIT output is not yet supported: ITSS directory structure and LZX compression not implemented. " +
+            "Consider using EPUB or MOBI output formats instead."
+        )
+    }
+    
+    @Suppress("unused")
+    private fun convertInternal(book: OebBook, outputFile: File, workDir: File) {
         val output = ByteArrayOutputStream()
         
         // Collect content files

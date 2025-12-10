@@ -17,7 +17,7 @@ class ChmInput : InputPlugin {
     override val name = "CHM Input"
     override val author = "Calibre Kotlin"
     override val description = "Converts CHM (Compiled HTML Help) files to ebooks"
-    override val supportedFormats = listOf("chm")
+    override val fileTypes = setOf("chm")
     
     override fun convert(inputFile: File, workDir: File): OebBook {
         val data = inputFile.readBytes()
@@ -95,10 +95,20 @@ class ChmInput : InputPlugin {
         return book
     }
     
+    /**
+     * Sanitizes a filename while preserving relative directory structure.
+     * Prevents path traversal attacks while keeping resource links working.
+     */
     private fun sanitizeFilename(name: String): String {
         return name.replace("\\", "/")
+            // Remove any path traversal attempts
             .split("/")
-            .last()
-            .replace(Regex("[<>:\"|?*]"), "_")
+            .filter { it != ".." && it != "." && it.isNotEmpty() }
+            .joinToString("/") { part ->
+                // Sanitize each path component
+                part.replace(Regex("[<>:\"|?*]"), "_")
+            }
+            .trimStart('/') // Remove leading slash for relative paths
+            .ifEmpty { "unnamed_file" }
     }
 }

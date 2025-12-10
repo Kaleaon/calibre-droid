@@ -52,7 +52,8 @@ class LitParser(private val data: ByteArray) {
             val numEntries = header.entryCount
             
             for (i in 0 until numEntries) {
-                if (buffer.position() + 8 >= data.size) break
+                // Need at least 16 bytes for 4 int32 values (nameOffset, dataOffset, dataSize, section)
+                if (buffer.position() + 16 > data.size) break
                 
                 try {
                     // Read entry (simplified - actual format is more complex)

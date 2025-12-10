@@ -363,8 +363,29 @@ class RedditFictionDownloader : WebContentFetcher() {
         // Strikethrough
         html = html.replace(Regex("~~(.+?)~~"), "<del>$1</del>")
         
-        // Links
-        html = html.replace(Regex("\\[([^\\]]+)\\]\\(([^)]+)\\)"), "<a href=\"$2\">$1</a>")
+        // Links - with security validation to prevent javascript: and data: URL injection
+        html = html.replace(Regex("\\[([^\\]]+)\\]\\(([^)]+)\\)")) { match ->
+            val label = match.groupValues[1]
+            val href = match.groupValues[2]
+            
+            // Only allow safe URL schemes (http, https, relative paths, and reddit paths)
+            val safeHref = when {
+                href.startsWith("http://") || href.startsWith("https://") -> href
+                href.startsWith("/r/") || href.startsWith("/u/") -> "https://www.reddit.com$href"
+                href.startsWith("#") -> href  // Anchor links
+                href.matches(Regex("^[a-zA-Z0-9/_.-]+$")) -> href  // Simple relative paths
+                else -> "#"  // Block potentially dangerous URLs (javascript:, data:, etc.)
+            }
+            
+            // Escape HTML special characters in label to prevent injection
+            val safeLabel = label
+                .replace("&", "&amp;")
+                .replace("<", "&lt;")
+                .replace(">", "&gt;")
+                .replace("\"", "&quot;")
+            
+            "<a href=\"$safeHref\">$safeLabel</a>"
+        }
         
         // Code blocks
         html = html.replace(Regex("```([^`]+)```"), "<pre><code>$1</code></pre>")
