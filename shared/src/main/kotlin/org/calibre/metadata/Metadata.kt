@@ -37,7 +37,9 @@ data class Metadata(
     var readingProgress: ReadingProgress = ReadingProgress(),
     var bookmarks: MutableList<Bookmark> = mutableListOf(),
     var dateAdded: LocalDateTime = LocalDateTime.now(),
-    var dateModified: LocalDateTime = LocalDateTime.now()
+    var dateModified: LocalDateTime = LocalDateTime.now(),
+    var isbn: String? = null,
+    var coverData: ByteArray? = null
 ) {
     fun isNull(field: String): Boolean {
         return when (field) {
