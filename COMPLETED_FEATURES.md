@@ -205,6 +205,51 @@ This document summarizes all major features that have been implemented in the Ca
 - ✅ Article download and processing
 - ✅ Ebook generation from news articles
 
+### 10. Web Content Downloading
+- ✅ **Fanfiction Downloader** supporting:
+  - FanFiction.Net (FFN)
+  - Archive of Our Own (AO3)
+  - Wattpad
+  - Royal Road
+  - Scribble Hub
+  - SpaceBattles / Sufficient Velocity
+  - Questionable Questing
+  - Automatic chapter navigation
+  - Metadata extraction (author, tags, ratings)
+  - Cover image download
+
+- ✅ **WebComic Downloader** supporting:
+  - Webtoon (webtoons.com)
+  - Tapas
+  - XKCD
+  - SMBC (Saturday Morning Breakfast Cereal)
+  - Questionable Content
+  - Penny Arcade
+  - Mangadex (manga)
+  - Mangakakalot / Manganato
+  - Generic webcomic sites with auto-detection
+  - Full series download
+  - CBZ archive creation
+  - EPUB with embedded images
+
+- ✅ **Reddit Fiction Downloader** supporting:
+  - r/HFY (Humanity, Fuck Yeah!)
+  - r/nosleep
+  - r/WritingPrompts
+  - r/redditserials
+  - Wiki page series download
+  - Thread continuation following
+  - Author post history search
+  - Markdown to HTML conversion
+
+- ✅ **Web to EPUB Converter**:
+  - Text story to EPUB
+  - Webcomic to EPUB (image-based)
+  - CBZ archive creation
+  - Cover image embedding
+  - Table of contents generation
+  - Metadata preservation
+
 ### 9. Infrastructure
 - ✅ Structured logging system
 - ✅ Error handling
@@ -373,13 +418,14 @@ This document summarizes all major features that have been implemented in the Ca
 
 ## Statistics
 
-- **Total Features Implemented**: 150+
+- **Total Features Implemented**: 200+
 - **Media Types Supported**: 8 (Books, Movies, TV, Music, Comics, Magazines, Audiobooks, Photos)
 - **Ebook Input Formats**: 15
 - **Ebook Output Formats**: 9
 - **Video Formats**: 10+
 - **Audio Formats**: 10+
 - **Metadata Providers**: 5 (TMDB, MusicBrainz, ComicVine, Google Books, Audible)
+- **Web Content Sources**: 15+ (Fanfiction, Webcomics, Reddit)
 - **Supported Languages**: 10+
 - **Device Drivers**: 4 (MTP, Kindle, Kobo, Folder)
 - **Platforms**: Desktop (JVM), Android, Web
