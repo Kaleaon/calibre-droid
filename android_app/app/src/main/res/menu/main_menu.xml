@@ -17,4 +17,14 @@
         android:icon="@android:drawable/ic_menu_recent_history"
         android:title="Recently Read"
         app:showAsAction="never" />
+    <item
+        android:id="@+id/action_export_library"
+        android:icon="@android:drawable/ic_menu_save"
+        android:title="Export Library Backup"
+        app:showAsAction="never" />
+    <item
+        android:id="@+id/action_import_library"
+        android:icon="@android:drawable/ic_menu_upload"
+        android:title="Import Library Backup"
+        app:showAsAction="never" />
 </menu>

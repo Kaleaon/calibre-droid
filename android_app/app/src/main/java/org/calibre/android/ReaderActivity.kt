@@ -1,10 +1,12 @@
 package org.calibre.android
 
 import android.os.Bundle
+import android.os.SystemClock
 import android.view.Menu
 import android.view.MenuItem
 import android.webkit.JavascriptInterface
 import android.webkit.WebView
+import android.webkit.WebSettings
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import org.calibre.android.databinding.ActivityReaderBinding
@@ -18,6 +20,8 @@ class ReaderActivity : AppCompatActivity() {
     private lateinit var library: org.calibre.metadata.Library
     private var startTime: Long = 0
     private var settings: org.calibre.metadata.ReadingSettings = org.calibre.metadata.ReadingSettings()
+    private var lastProgressWriteAtMs: Long = 0
+    private var lastProgressPercent: Int = -1
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -63,7 +67,21 @@ class ReaderActivity : AppCompatActivity() {
     }
     
     private fun setupWebView() {
-        binding.webView.settings.javaScriptEnabled = true
+        val webSettings: WebSettings = binding.webView.settings
+        webSettings.javaScriptEnabled = true
+        webSettings.domStorageEnabled = true
+        webSettings.loadsImagesAutomatically = true
+        webSettings.builtInZoomControls = true
+        webSettings.displayZoomControls = false
+        webSettings.useWideViewPort = true
+        webSettings.loadWithOverviewMode = true
+        webSettings.allowContentAccess = false
+        webSettings.allowFileAccess = true // required for file:// reader content
+        webSettings.allowFileAccessFromFileURLs = false
+        webSettings.allowUniversalAccessFromFileURLs = false
+        webSettings.cacheMode = WebSettings.LOAD_DEFAULT
+        WebView.setWebContentsDebuggingEnabled(false)
+
         binding.webView.addJavascriptInterface(ReaderInterface(), "AndroidReader")
         
         // Load settings from SharedPreferences
@@ -208,12 +226,19 @@ class ReaderActivity : AppCompatActivity() {
         @JavascriptInterface
         fun updateProgress(percent: Int, totalHeight: Int) {
             runOnUiThread {
+                val now = SystemClock.elapsedRealtime()
+                // Throttle writes to avoid saving on every scroll event
+                if (percent == lastProgressPercent && now - lastProgressWriteAtMs < 2000) return@runOnUiThread
+                if (now - lastProgressWriteAtMs < 1500) return@runOnUiThread
+
                 val book = library.getMetadata(bookId)
                 if (book != null) {
                     // Estimate pages (rough calculation)
                     val estimatedPages = (totalHeight / 800).coerceAtLeast(1) // ~800px per page
                     val currentPage = ((percent / 100.0) * estimatedPages).toInt()
                     library.updateReadingProgress(bookId, currentPage, estimatedPages, "$percent%")
+                    lastProgressPercent = percent
+                    lastProgressWriteAtMs = now
                 }
             }
         }
