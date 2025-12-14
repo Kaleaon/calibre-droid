@@ -97,7 +97,7 @@ class HtmlInput : InputPlugin {
         
         return Metadata(
             title = title,
-            authors = if (author != null) listOf(author) else emptyList()
+            authors = if (author != null) mutableListOf(author) else mutableListOf()
         )
     }
     
@@ -263,7 +263,7 @@ class HtmlInput : InputPlugin {
             }
             
             val linkedFile = resolveFile(href, htmlDir, baseDir) ?: continue
-            if (!linkedFile.exists() || !linkedFile.extension.lowercase() in setOf("html", "htm", "xhtml")) {
+            if (!linkedFile.exists() || linkedFile.extension.lowercase() !in setOf("html", "htm", "xhtml")) {
                 continue
             }
             

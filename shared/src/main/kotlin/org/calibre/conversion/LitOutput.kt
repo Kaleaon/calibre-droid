@@ -1,6 +1,5 @@
 package org.calibre.conversion
 
-import org.calibre.oeb.OebBook
 import org.calibre.utils.Logger
 import java.io.ByteArrayOutputStream
 import java.io.File
@@ -19,9 +18,7 @@ import java.util.zip.Deflater
 class LitOutput : OutputPlugin {
     
     override val name = "LIT Output"
-    override val author = "Calibre Kotlin"
-    override val description = "Converts ebooks to LIT (Microsoft Reader) format"
-    override val outputFormat = "lit"
+    override val fileType = "lit"
     
     companion object {
         private const val ITSF_SIGNATURE = "ITSF"
@@ -32,7 +29,7 @@ class LitOutput : OutputPlugin {
         )
     }
     
-    override fun convert(book: OebBook, outputFile: File, workDir: File) {
+    override fun convert(book: OebBook, outputFile: File) {
         val output = ByteArrayOutputStream()
         
         // Collect content files
@@ -43,7 +40,7 @@ class LitOutput : OutputPlugin {
         
         // Add manifest items
         for ((id, item) in book.manifest) {
-            if (item.file?.exists() == true) {
+            if (item.file.exists()) {
                 files["/${item.href}"] = item.file.readBytes()
             }
         }

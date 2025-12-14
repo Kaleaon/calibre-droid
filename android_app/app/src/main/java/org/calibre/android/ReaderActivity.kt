@@ -10,6 +10,7 @@ import android.webkit.WebSettings
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import org.calibre.android.databinding.ActivityReaderBinding
+import org.calibre.conversion.ConversionPipeline
 import java.io.File
 
 class ReaderActivity : AppCompatActivity() {
@@ -37,14 +38,21 @@ class ReaderActivity : AppCompatActivity() {
             
             try {
                 // Check if we need conversion
-                if (bookFile.extension.lowercase() == "html" || bookFile.extension.lowercase() == "txt") {
+                if (bookFile.extension.lowercase() in setOf("epub", "mobi", "azw3")) {
+                    val readerCacheDir = File(cacheDir, "reader_cache")
+                    if (!readerCacheDir.exists()) readerCacheDir.mkdirs()
+
+                    val outputFile = File(readerCacheDir, "content_${bookId}.html")
+                    val pipeline = ConversionPipeline()
+                    try {
+                        pipeline.convert(bookFile, "html", outputFile)
+                        binding.webView.loadUrl("file://${outputFile.absolutePath}")
+                    } catch (e: Exception) {
+                        val html = "<html><body><h1>Conversion Error</h1><pre>${e.message}</pre></body></html>"
+                        binding.webView.loadData(html, "text/html", "UTF-8")
+                    }
+                } else if (bookFile.extension.lowercase() == "html" || bookFile.extension.lowercase() == "txt") {
                     binding.webView.loadUrl("file://${bookFile.absolutePath}")
-                } else if (bookFile.extension.lowercase() == "epub") {
-                    val html = "<html><body><h1>EPUB Not Yet Supported</h1><p>EPUB rendering is planned; for now please convert to HTML/TXT/PDF before importing.</p></body></html>"
-                    binding.webView.loadData(html, "text/html", "UTF-8")
-                } else if (bookFile.extension.lowercase() in setOf("mobi", "azw3")) {
-                    val html = "<html><body><h1>Format Not Yet Supported</h1><p>${bookFile.extension.uppercase()} rendering is planned; for now please convert to HTML/TXT/PDF before importing.</p></body></html>"
-                    binding.webView.loadData(html, "text/html", "UTF-8")
                 } else {
                      val html = "<html><body><h1>Format Not Supported</h1><p>Cannot read ${bookFile.extension}</p></body></html>"
                      binding.webView.loadData(html, "text/html", "UTF-8")

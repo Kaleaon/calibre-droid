@@ -1,6 +1,7 @@
 package org.calibre.conversion
 
 import java.io.File
+import java.nio.charset.StandardCharsets
 import java.util.zip.ZipEntry
 import java.util.zip.ZipOutputStream
 

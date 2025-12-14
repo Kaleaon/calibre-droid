@@ -1,9 +1,6 @@
 package org.calibre.conversion
 
 import org.calibre.formats.pdb.PalmDocDecompressor
-import org.calibre.formats.pdb.PdbHeader
-import org.calibre.formats.pdb.PdbHeaderBuilder
-import org.calibre.oeb.OebBook
 import org.calibre.utils.Logger
 import java.io.ByteArrayOutputStream
 import java.io.File
@@ -19,9 +16,7 @@ import java.nio.ByteOrder
 class PdbOutput : OutputPlugin {
     
     override val name = "PDB Output"
-    override val author = "Calibre Kotlin"
-    override val description = "Converts ebooks to PDB (PalmDoc) format"
-    override val outputFormat = "pdb"
+    override val fileType = "pdb"
     
     companion object {
         private const val MAX_RECORD_SIZE = 4096
@@ -29,7 +24,7 @@ class PdbOutput : OutputPlugin {
         private const val COMPRESSION_NONE = 1
     }
     
-    override fun convert(book: OebBook, outputFile: File, workDir: File) {
+    override fun convert(book: OebBook, outputFile: File) {
         // Extract text content
         val textContent = extractTextContent(book)
         val metadata = book.metadata
@@ -48,7 +43,7 @@ class PdbOutput : OutputPlugin {
         val sb = StringBuilder()
         
         for (item in book.spine) {
-            if (item.file?.exists() == true && item.mediaType.contains("html")) {
+            if (item.file.exists() && item.mediaType.contains("html")) {
                 val html = item.file.readText()
                 
                 // Convert HTML to plain text

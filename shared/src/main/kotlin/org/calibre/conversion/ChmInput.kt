@@ -2,8 +2,6 @@ package org.calibre.conversion
 
 import org.calibre.formats.chm.ChmParser
 import org.calibre.metadata.Metadata
-import org.calibre.oeb.OebBook
-import org.calibre.oeb.OebItem
 import java.io.File
 
 /**
@@ -15,21 +13,17 @@ import java.io.File
 class ChmInput : InputPlugin {
     
     override val name = "CHM Input"
-    override val author = "Calibre Kotlin"
-    override val description = "Converts CHM (Compiled HTML Help) files to ebooks"
-    override val supportedFormats = listOf("chm")
+    override val fileTypes = setOf("chm")
     
     override fun convert(inputFile: File, workDir: File): OebBook {
         val data = inputFile.readBytes()
         val parser = ChmParser(data)
         
-        val book = OebBook()
-        
         // Set metadata
         val metadata = Metadata(
             title = parser.getTitle()
         )
-        book.metadata = metadata
+        val book = OebBook(metadata)
         
         // Create content directory
         val oebpsDir = File(workDir, "OEBPS")

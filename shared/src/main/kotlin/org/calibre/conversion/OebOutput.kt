@@ -153,17 +153,19 @@ class OebOutput : OutputPlugin {
         book.metadata.authors.forEach { author ->
             addDcElement(doc, metadata, dcNs, "creator", author)
         }
-        if (book.metadata.publisher.isNotEmpty()) {
-            addDcElement(doc, metadata, dcNs, "publisher", book.metadata.publisher)
+        book.metadata.publisher?.takeIf { it.isNotBlank() }?.let {
+            addDcElement(doc, metadata, dcNs, "publisher", it)
         }
-        if (book.metadata.description.isNotEmpty()) {
-            addDcElement(doc, metadata, dcNs, "description", book.metadata.description)
+        book.metadata.comments?.takeIf { it.isNotBlank() }?.let {
+            addDcElement(doc, metadata, dcNs, "description", it)
         }
-        if (book.metadata.language.isNotEmpty()) {
-            addDcElement(doc, metadata, dcNs, "language", book.metadata.language)
+        val lang = book.metadata.languages.firstOrNull()?.takeIf { it.isNotBlank() }
+        if (lang != null) {
+            addDcElement(doc, metadata, dcNs, "language", lang)
         }
-        if (book.metadata.publicationDate != null) {
-            addDcElement(doc, metadata, dcNs, "date", book.metadata.publicationDate.toString())
+        val pubDate = book.metadata.pubDate ?: book.metadata.dateAdded
+        if (pubDate != null) {
+            addDcElement(doc, metadata, dcNs, "date", pubDate.toString())
         }
         
         // Identifier

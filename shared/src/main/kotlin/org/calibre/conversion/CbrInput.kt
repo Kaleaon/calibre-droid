@@ -2,8 +2,6 @@ package org.calibre.conversion
 
 import org.calibre.formats.rar.RarExtractor
 import org.calibre.metadata.Metadata
-import org.calibre.oeb.OebBook
-import org.calibre.oeb.OebItem
 import java.io.File
 
 /**
@@ -15,15 +13,11 @@ import java.io.File
 class CbrInput : InputPlugin {
     
     override val name = "CBR Input"
-    override val author = "Calibre Kotlin"
-    override val description = "Converts CBR (Comic Book RAR) archives to ebooks"
-    override val supportedFormats = listOf("cbr")
+    override val fileTypes = setOf("cbr")
     
     override fun convert(inputFile: File, workDir: File): OebBook {
         val data = inputFile.readBytes()
         val extractor = RarExtractor(data)
-        
-        val book = OebBook()
         
         // Set metadata from filename
         val title = inputFile.nameWithoutExtension
@@ -32,7 +26,7 @@ class CbrInput : InputPlugin {
             .trim()
         
         val metadata = Metadata(title = title)
-        book.metadata = metadata
+        val book = OebBook(metadata)
         
         // Create content directory
         val oebpsDir = File(workDir, "OEBPS")

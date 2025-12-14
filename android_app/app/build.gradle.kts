@@ -28,7 +28,14 @@ android {
                     "../../shared/src/main/kotlin/org/calibre/metadata",
                     "../../shared/src/main/kotlin/org/calibre/search",
                     "../../shared/src/main/kotlin/org/calibre/utils",
-                    "../../shared/src/main/kotlin/org/calibre/formats/mobi"
+                    "../../shared/src/main/kotlin/org/calibre/formats/mobi",
+                    "../../shared/src/main/kotlin/org/calibre/formats/rar",
+                    "../../shared/src/main/kotlin/org/calibre/formats/chm",
+                    "../../shared/src/main/kotlin/org/calibre/formats/djvu",
+                    "../../shared/src/main/kotlin/org/calibre/formats/lit",
+                    "../../shared/src/main/kotlin/org/calibre/formats/lrf",
+                    "../../shared/src/main/kotlin/org/calibre/formats/pdb",
+                    "../../shared/src/main/kotlin/org/calibre/conversion"
                 )
             )
         }
