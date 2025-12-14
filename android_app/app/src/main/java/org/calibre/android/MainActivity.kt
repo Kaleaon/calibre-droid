@@ -19,35 +19,39 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.widget.SearchView
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
+import androidx.work.Data
+import androidx.work.OneTimeWorkRequestBuilder
+import androidx.work.WorkManager
 import org.calibre.android.databinding.ActivityMainBinding
-import org.calibre.metadata.Library
 import org.calibre.metadata.Metadata
 import java.io.File
 import java.io.FileOutputStream
+import java.util.zip.ZipInputStream
+import java.util.zip.ZipOutputStream
 import java.util.concurrent.Executors
 
 class MainActivity : AppCompatActivity() {
 
     private lateinit var binding: ActivityMainBinding
-    private lateinit var library: Library
+    private lateinit var library: AndroidLibrary
     private lateinit var adapter: BookAdapter
 
     private val importBookLauncher = registerForActivityResult(
         ActivityResultContracts.OpenDocument()
     ) { uri ->
-        uri?.let { importBook(it) }
+        uri?.let { enqueueImport(it) }
     }
 
     private val exportLibraryLauncher = registerForActivityResult(
-        ActivityResultContracts.CreateDocument("application/json")
+        ActivityResultContracts.CreateDocument("application/zip")
     ) { uri ->
-        uri?.let { exportLibraryToUri(it) }
+        uri?.let { exportBackupToUri(it) }
     }
 
     private val importLibraryLauncher = registerForActivityResult(
         ActivityResultContracts.OpenDocument()
     ) { uri ->
-        uri?.let { importLibraryFromUri(it) }
+        uri?.let { importBackupFromUri(it) }
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -111,11 +115,11 @@ class MainActivity : AppCompatActivity() {
                 true
             }
             R.id.action_export_library -> {
-                exportLibraryLauncher.launch("calibre-droid-library-backup.json")
+                exportLibraryLauncher.launch("calibre-droid-backup.zip")
                 true
             }
             R.id.action_import_library -> {
-                importLibraryLauncher.launch(arrayOf("application/json", "text/plain", "*/*"))
+                importLibraryLauncher.launch(arrayOf("application/zip", "*/*"))
                 true
             }
             else -> super.onOptionsItemSelected(item)
@@ -173,30 +177,33 @@ class MainActivity : AppCompatActivity() {
         )
     }
     
-    private fun importBook(uri: Uri) {
+    private fun enqueueImport(uri: Uri) {
         try {
-            contentResolver.openInputStream(uri)?.use { inputStream ->
-                // Get filename from URI
-                val fileName = getFileName(uri) ?: "imported_book"
-                val extension = fileName.substringAfterLast('.', "")
-                
-                // Create temp file in app's cache
-                val tempFile = File(cacheDir, "import_${System.currentTimeMillis()}.$extension")
-                FileOutputStream(tempFile).use { outputStream ->
-                    inputStream.copyTo(outputStream)
-                }
-                
-                // Import using Library
-                val id = library.importBook(tempFile)
-                
-                // Clean up temp file
-                tempFile.delete()
-                
-                Toast.makeText(this, "Book imported: ID $id", Toast.LENGTH_SHORT).show()
-                refreshList()
-            } ?: run {
-                Toast.makeText(this, "Error: Could not open file", Toast.LENGTH_SHORT).show()
+            // Persist permission when possible (OpenDocument grants persistable permission)
+            try {
+                contentResolver.takePersistableUriPermission(
+                    uri,
+                    Intent.FLAG_GRANT_READ_URI_PERMISSION
+                )
+            } catch (_: SecurityException) {
+                // Some providers don't allow persistable grants; worker will still try immediately.
             }
+
+            val fileName = getFileName(uri) ?: "imported_book"
+            val mime = contentResolver.getType(uri) ?: "application/octet-stream"
+
+            val input = Data.Builder()
+                .putString(org.calibre.android.work.ImportBookWorker.KEY_URI, uri.toString())
+                .putString(org.calibre.android.work.ImportBookWorker.KEY_DISPLAY_NAME, fileName)
+                .putString(org.calibre.android.work.ImportBookWorker.KEY_MIME_TYPE, mime)
+                .build()
+
+            val request = OneTimeWorkRequestBuilder<org.calibre.android.work.ImportBookWorker>()
+                .setInputData(input)
+                .build()
+
+            WorkManager.getInstance(this).enqueue(request)
+            Toast.makeText(this, "Import queued", Toast.LENGTH_SHORT).show()
         } catch (e: Exception) {
             Toast.makeText(this, "Import failed: ${e.message}", Toast.LENGTH_LONG).show()
         }
@@ -205,7 +212,8 @@ class MainActivity : AppCompatActivity() {
     private fun exportLibraryToUri(uri: Uri) {
         try {
             val tmp = File(cacheDir, "library_export_${System.currentTimeMillis()}.json")
-            library.exportLibrary(tmp)
+            // legacy stub (kept for compatibility)
+            tmp.writeText("[]")
             contentResolver.openOutputStream(uri)?.use { out ->
                 tmp.inputStream().use { it.copyTo(out) }
             } ?: throw Exception("Could not open output stream")
@@ -222,12 +230,39 @@ class MainActivity : AppCompatActivity() {
             contentResolver.openInputStream(uri)?.use { input ->
                 FileOutputStream(tmp).use { output -> input.copyTo(output) }
             } ?: throw Exception("Could not open input stream")
-            library.importLibrary(tmp)
+            // legacy stub (kept for compatibility)
             tmp.delete()
             Toast.makeText(this, "Library imported", Toast.LENGTH_SHORT).show()
             refreshList()
         } catch (e: Exception) {
             Toast.makeText(this, "Import failed: ${e.message}", Toast.LENGTH_LONG).show()
+        }
+    }
+
+    private fun exportBackupToUri(uri: Uri) {
+        try {
+            contentResolver.openOutputStream(uri)?.use { out ->
+                ZipOutputStream(out).use { zip ->
+                    library.exportBackupZip(zip)
+                }
+            } ?: throw Exception("Could not open output stream")
+            Toast.makeText(this, "Backup exported", Toast.LENGTH_SHORT).show()
+        } catch (e: Exception) {
+            Toast.makeText(this, "Backup export failed: ${e.message}", Toast.LENGTH_LONG).show()
+        }
+    }
+
+    private fun importBackupFromUri(uri: Uri) {
+        try {
+            contentResolver.openInputStream(uri)?.use { input ->
+                ZipInputStream(input).use { zip ->
+                    library.importBackupZip(zip)
+                }
+            } ?: throw Exception("Could not open input stream")
+            Toast.makeText(this, "Backup imported", Toast.LENGTH_SHORT).show()
+            refreshList()
+        } catch (e: Exception) {
+            Toast.makeText(this, "Backup import failed: ${e.message}", Toast.LENGTH_LONG).show()
         }
     }
     
@@ -245,10 +280,8 @@ class MainActivity : AppCompatActivity() {
         }
         if (result == null) {
             result = uri.path
-            val cut = result?.lastIndexOf('/')
-            if (cut != -1) {
-                result = result?.substring(cut + 1)
-            }
+            val cut = result?.lastIndexOf('/') ?: -1
+            if (cut != -1) result = result?.substring(cut + 1)
         }
         return result
     }
@@ -287,7 +320,7 @@ class MainActivity : AppCompatActivity() {
     }
 
     class BookAdapter(
-        private val library: Library,
+        private val library: AndroidLibrary,
         private var books: List<Metadata>,
         private val onItemClick: (Metadata) -> Unit
     ) : RecyclerView.Adapter<BookAdapter.BookViewHolder>() {
@@ -333,7 +366,7 @@ class MainActivity : AppCompatActivity() {
             private val authorView: TextView = itemView.findViewById(R.id.book_author)
             private val coverView: ImageView? = itemView.findViewById(R.id.book_cover)
 
-            fun bind(book: Metadata, library: Library, adapter: BookAdapter) {
+            fun bind(book: Metadata, library: AndroidLibrary, adapter: BookAdapter) {
                 titleView.text = book.title
                 authorView.text = book.authors.joinToString(", ")
                 
@@ -369,7 +402,7 @@ class MainActivity : AppCompatActivity() {
             
             private fun loadCoverImageAsync(
                 bookId: Int,
-                library: Library,
+                library: AndroidLibrary,
                 imageView: ImageView,
                 adapter: BookAdapter
             ) {

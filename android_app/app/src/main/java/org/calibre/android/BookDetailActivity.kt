@@ -5,12 +5,11 @@ import android.os.Bundle
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import org.calibre.android.databinding.ActivityBookDetailBinding
-import org.calibre.metadata.Library
 
 class BookDetailActivity : AppCompatActivity() {
 
     private lateinit var binding: ActivityBookDetailBinding
-    private lateinit var library: Library
+    private lateinit var library: AndroidLibrary
     private var bookId: Int = -1
 
     override fun onCreate(savedInstanceState: Bundle?) {

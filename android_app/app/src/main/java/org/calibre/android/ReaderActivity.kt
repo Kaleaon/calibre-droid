@@ -10,14 +10,13 @@ import android.webkit.WebSettings
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import org.calibre.android.databinding.ActivityReaderBinding
-import org.calibre.conversion.ConversionPipeline
 import java.io.File
 
 class ReaderActivity : AppCompatActivity() {
 
     private lateinit var binding: ActivityReaderBinding
     private var bookId: Int = -1
-    private lateinit var library: org.calibre.metadata.Library
+    private lateinit var library: AndroidLibrary
     private var startTime: Long = 0
     private var settings: org.calibre.metadata.ReadingSettings = org.calibre.metadata.ReadingSettings()
     private var lastProgressWriteAtMs: Long = 0
@@ -38,22 +37,14 @@ class ReaderActivity : AppCompatActivity() {
             
             try {
                 // Check if we need conversion
-                if (bookFile.extension.lowercase() in setOf("epub", "mobi", "azw3")) {
-                    val cacheDir = File(cacheDir, "reader_cache")
-                    if (!cacheDir.exists()) cacheDir.mkdirs()
-                    
-                    val outputFile = File(cacheDir, "content.html")
-                    
-                    val pipeline = ConversionPipeline()
-                    try {
-                        pipeline.convert(bookFile, "html", outputFile)
-                        binding.webView.loadUrl("file://${outputFile.absolutePath}")
-                    } catch (e: Exception) {
-                         val html = "<html><body><h1>Conversion Error</h1><p>${e.message}</p></body></html>"
-                         binding.webView.loadData(html, "text/html", "UTF-8")
-                    }
-                } else if (bookFile.extension.lowercase() == "html" || bookFile.extension.lowercase() == "txt") {
+                if (bookFile.extension.lowercase() == "html" || bookFile.extension.lowercase() == "txt") {
                     binding.webView.loadUrl("file://${bookFile.absolutePath}")
+                } else if (bookFile.extension.lowercase() == "epub") {
+                    val html = "<html><body><h1>EPUB Not Yet Supported</h1><p>EPUB rendering is planned; for now please convert to HTML/TXT/PDF before importing.</p></body></html>"
+                    binding.webView.loadData(html, "text/html", "UTF-8")
+                } else if (bookFile.extension.lowercase() in setOf("mobi", "azw3")) {
+                    val html = "<html><body><h1>Format Not Yet Supported</h1><p>${bookFile.extension.uppercase()} rendering is planned; for now please convert to HTML/TXT/PDF before importing.</p></body></html>"
+                    binding.webView.loadData(html, "text/html", "UTF-8")
                 } else {
                      val html = "<html><body><h1>Format Not Supported</h1><p>Cannot read ${bookFile.extension}</p></body></html>"
                      binding.webView.loadData(html, "text/html", "UTF-8")
@@ -210,15 +201,7 @@ class ReaderActivity : AppCompatActivity() {
         // Save reading time
         val readingTime = ((System.currentTimeMillis() - startTime) / 60000).toInt()
         if (readingTime > 0) {
-            val book = library.getMetadata(bookId)
-            if (book != null) {
-                book.readingProgress.readingTimeMinutes += readingTime
-                library.updateReadingProgress(
-                    bookId,
-                    book.readingProgress.currentPage,
-                    book.readingProgress.totalPages
-                )
-            }
+            library.addReadingTimeMinutes(bookId, readingTime)
         }
     }
     

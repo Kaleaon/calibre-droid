@@ -20,11 +20,11 @@
     <item
         android:id="@+id/action_export_library"
         android:icon="@android:drawable/ic_menu_save"
-        android:title="Export Library Backup"
+        android:title="Export Backup (ZIP)"
         app:showAsAction="never" />
     <item
         android:id="@+id/action_import_library"
         android:icon="@android:drawable/ic_menu_upload"
-        android:title="Import Library Backup"
+        android:title="Import Backup (ZIP)"
         app:showAsAction="never" />
 </menu>
