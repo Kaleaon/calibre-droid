@@ -2,6 +2,7 @@ package org.calibre.android
 
 import android.content.Context
 import com.fasterxml.jackson.databind.ObjectMapper
+import com.fasterxml.jackson.databind.DeserializationFeature
 import com.fasterxml.jackson.databind.SerializationFeature
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
@@ -40,6 +41,7 @@ class AndroidLibrary(
     private val dao = db.bookDao()
     private val mapper: ObjectMapper = jacksonObjectMapper()
         .registerModule(JavaTimeModule())
+        .configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false)
         .enable(SerializationFeature.INDENT_OUTPUT)
 
     private val parsers = listOf(EpubParser(), MobiMetadataParser()) + extraParsers
@@ -104,17 +106,19 @@ class AndroidLibrary(
     fun importBook(file: File, originalFileName: String? = null): Int {
         if (!file.exists()) throw Exception("File not found: ${file.absolutePath}")
 
+        val fallbackTitle = (originalFileName?.substringBeforeLast('.', originalFileName) ?: file.nameWithoutExtension)
+
         val parser = parsers.find { it.canParse(file) }
         val metadata = if (parser != null) {
             try {
                 parser.parseMetadata(file)
             } catch (e: Exception) {
                 Logger.warn("Could not parse metadata from ${file.name} (${e.message}). Using default.", e)
-                Metadata(title = file.nameWithoutExtension)
+                Metadata(title = fallbackTitle)
             }
         } else {
             Logger.warn("No parser found for ${file.extension}. Using filename as title.")
-            Metadata(title = file.nameWithoutExtension)
+            Metadata(title = fallbackTitle)
         }
 
         val now = LocalDateTime.now()

@@ -209,36 +209,6 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
-    private fun exportLibraryToUri(uri: Uri) {
-        try {
-            val tmp = File(cacheDir, "library_export_${System.currentTimeMillis()}.json")
-            // legacy stub (kept for compatibility)
-            tmp.writeText("[]")
-            contentResolver.openOutputStream(uri)?.use { out ->
-                tmp.inputStream().use { it.copyTo(out) }
-            } ?: throw Exception("Could not open output stream")
-            tmp.delete()
-            Toast.makeText(this, "Library exported", Toast.LENGTH_SHORT).show()
-        } catch (e: Exception) {
-            Toast.makeText(this, "Export failed: ${e.message}", Toast.LENGTH_LONG).show()
-        }
-    }
-
-    private fun importLibraryFromUri(uri: Uri) {
-        try {
-            val tmp = File(cacheDir, "library_import_${System.currentTimeMillis()}.json")
-            contentResolver.openInputStream(uri)?.use { input ->
-                FileOutputStream(tmp).use { output -> input.copyTo(output) }
-            } ?: throw Exception("Could not open input stream")
-            // legacy stub (kept for compatibility)
-            tmp.delete()
-            Toast.makeText(this, "Library imported", Toast.LENGTH_SHORT).show()
-            refreshList()
-        } catch (e: Exception) {
-            Toast.makeText(this, "Import failed: ${e.message}", Toast.LENGTH_LONG).show()
-        }
-    }
-
     private fun exportBackupToUri(uri: Uri) {
         try {
             contentResolver.openOutputStream(uri)?.use { out ->
