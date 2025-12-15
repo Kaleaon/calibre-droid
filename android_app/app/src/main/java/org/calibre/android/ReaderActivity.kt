@@ -2,6 +2,7 @@ package org.calibre.android
 
 import android.os.Bundle
 import android.os.SystemClock
+import android.content.pm.ApplicationInfo
 import android.view.Menu
 import android.view.MenuItem
 import android.webkit.JavascriptInterface
@@ -14,6 +15,11 @@ import org.calibre.conversion.ConversionPipeline
 import java.io.File
 
 class ReaderActivity : AppCompatActivity() {
+
+    private companion object {
+        private const val PROGRESS_WRITE_THROTTLE_MS = 1500L
+        private const val PROGRESS_WRITE_THROTTLE_NO_CHANGE_MS = 2000L
+    }
 
     private lateinit var binding: ActivityReaderBinding
     private var bookId: Int = -1
@@ -79,7 +85,8 @@ class ReaderActivity : AppCompatActivity() {
         webSettings.allowFileAccessFromFileURLs = false
         webSettings.allowUniversalAccessFromFileURLs = false
         webSettings.cacheMode = WebSettings.LOAD_DEFAULT
-        WebView.setWebContentsDebuggingEnabled(false)
+        val debuggable = (applicationInfo.flags and ApplicationInfo.FLAG_DEBUGGABLE) != 0
+        WebView.setWebContentsDebuggingEnabled(debuggable)
 
         binding.webView.addJavascriptInterface(ReaderInterface(), "AndroidReader")
         
@@ -219,8 +226,8 @@ class ReaderActivity : AppCompatActivity() {
             runOnUiThread {
                 val now = SystemClock.elapsedRealtime()
                 // Throttle writes to avoid saving on every scroll event
-                if (percent == lastProgressPercent && now - lastProgressWriteAtMs < 2000) return@runOnUiThread
-                if (now - lastProgressWriteAtMs < 1500) return@runOnUiThread
+                if (percent == lastProgressPercent && now - lastProgressWriteAtMs < PROGRESS_WRITE_THROTTLE_NO_CHANGE_MS) return@runOnUiThread
+                if (now - lastProgressWriteAtMs < PROGRESS_WRITE_THROTTLE_MS) return@runOnUiThread
 
                 val book = library.getMetadata(bookId)
                 if (book != null) {

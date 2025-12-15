@@ -291,6 +291,13 @@ class MainActivity : AppCompatActivity() {
         refreshList()
     }
 
+    override fun onDestroy() {
+        super.onDestroy()
+        if (::adapter.isInitialized) {
+            adapter.shutdown()
+        }
+    }
+
     private fun setupRecyclerView() {
         adapter = BookAdapter(library, library.getAllBooks()) { book ->
             // On Item Click
@@ -325,6 +332,8 @@ class MainActivity : AppCompatActivity() {
         private val onItemClick: (Metadata) -> Unit
     ) : RecyclerView.Adapter<BookAdapter.BookViewHolder>() {
 
+        private val coverLock = Any()
+
         // Lazy loading: only load covers for visible items (bounded, avoids OOM)
         private val coverCache: LruCache<Int, android.graphics.Bitmap> = object :
             LruCache<Int, android.graphics.Bitmap>(calculateCacheSizeBytes()) {
@@ -343,9 +352,15 @@ class MainActivity : AppCompatActivity() {
         fun updateData(newBooks: List<Metadata>) {
             books = newBooks
             // Clear cache when data changes
-            coverCache.evictAll()
-            noCover.clear()
+            synchronized(coverLock) {
+                coverCache.evictAll()
+                noCover.clear()
+            }
             notifyDataSetChanged()
+        }
+
+        fun shutdown() {
+            executor.shutdown()
         }
 
         override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): BookViewHolder {
@@ -382,14 +397,14 @@ class MainActivity : AppCompatActivity() {
                     imageView.tag = bookId
                     
                     // Check cache first
-                    val cached = adapter.coverCache.get(bookId)
+                    val cached = synchronized(adapter.coverLock) { adapter.coverCache.get(bookId) }
                     if (cached != null) {
                         imageView.setImageBitmap(cached)
                         return
                     }
 
                     // Known missing cover: avoid repeated work
-                    if (adapter.noCover.contains(bookId)) {
+                    if (synchronized(adapter.coverLock) { adapter.noCover.contains(bookId) }) {
                         imageView.setImageResource(android.R.drawable.ic_menu_gallery)
                         return
                     }
@@ -414,7 +429,9 @@ class MainActivity : AppCompatActivity() {
                             if (coverBytes != null) {
                                 val bitmap = decodeScaledBitmap(coverBytes, maxDimPx = 256)
                                 if (bitmap != null) {
-                                    adapter.coverCache.put(bookId, bitmap)
+                                    synchronized(adapter.coverLock) {
+                                        adapter.coverCache.put(bookId, bitmap)
+                                    }
                                     adapter.mainHandler.post {
                                         // Ensure this view holder still represents the same book
                                         if (imageView.tag == bookId) {
@@ -428,7 +445,9 @@ class MainActivity : AppCompatActivity() {
                     } catch (_: Exception) {
                         // fall through
                     }
-                    adapter.noCover.add(bookId)
+                    synchronized(adapter.coverLock) {
+                        adapter.noCover.add(bookId)
+                    }
                 }
             }
 
