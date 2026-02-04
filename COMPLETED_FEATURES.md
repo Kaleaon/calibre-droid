@@ -71,7 +71,7 @@ This document summarizes all major features that have been implemented in the Ca
 
 #### Comic Formats
 - ✅ CBZ (ZIP archive)
-- ✅ CBR (RAR archive)
+- ⚠️ CBR (RAR archive) - not implemented (requires RAR extraction library)
 - ✅ CB7 (7-Zip archive)
 - ✅ PDF comics
 
@@ -79,6 +79,12 @@ This document summarizes all major features that have been implemented in the Ca
 - ✅ PDF
 - ✅ EPUB
 - ✅ MOBI
+
+#### Not Implemented (Placeholder Conversion Plugins)
+- ⚠️ AZW4 input (Print Replica) - not implemented (placeholder throws `UnsupportedOperationException`)
+- ⚠️ RocketBook (RB) input/output - not implemented (placeholder throws `UnsupportedOperationException`)
+- ⚠️ SNB (Shanda Bambook) input/output - not implemented (placeholder throws `UnsupportedOperationException`)
+- ⚠️ Recipe input - not implemented (placeholder throws `UnsupportedOperationException`; handled by news fetching system)
 
 ### 3. Conversion Engine
 - ✅ Plugin-based architecture (InputPlugin/OutputPlugin)
