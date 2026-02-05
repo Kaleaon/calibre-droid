@@ -1,10 +1,10 @@
-# Calibre Kotlin Conversion - Final Status
+# Calibre Kotlin Conversion - Current Status
 
-## 🎉 All Major Features Completed!
+## 🚧 Major Features Still In Progress
 
-This document provides a comprehensive overview of the completed Calibre Kotlin conversion project.
+This document provides a comprehensive overview of the Calibre Kotlin conversion project and notes where work remains incomplete.
 
-## ✅ Completed Features Summary
+The Kotlin conversion is **functional for core ebook management and conversion**, but several major systems remain partial or experimental (FTS persistence, news scheduling, media server integration, format fidelity for complex formats).
 
 ### Core Library Management
 - ✅ JSON-based library storage
@@ -12,30 +12,27 @@ This document provides a comprehensive overview of the completed Calibre Kotlin 
 - ✅ Book import/export
 - ✅ Metadata management
 - ✅ Library export/import
-- ✅ Full-text search with content indexing
+- ⚠️ Full-text search prototype (in-memory index; limited extractors; no UI/CLI wiring)
 
-### Format Support
+- JSON-backed library management with metadata, reading progress, bookmarks
+- Conversion pipeline with OEB model and a wide set of input/output plugins (some simplified)
+- Basic HTTP content server with OPDS 1.2 feed generation
+- RSS/Atom news fetching (basic)
+- Simple logging utility
+- Desktop Swing UI, CLI, and Android reader app (basic feature set)
 
-#### Input Formats (8)
-1. ✅ EPUB - Full support with metadata, images, CSS
-2. ✅ MOBI/AZW - Header parsing, PalmDoc decompression
-3. ✅ AZW3 - Basic support
-4. ✅ PDF - Desktop parsing with PDFBox
-5. ✅ TXT - Plain text
-6. ✅ DOCX - Word document extraction
-7. ✅ RTF - Rich text format
-8. ✅ FB2 - FictionBook format
+## Partial / Experimental
 
 #### Output Formats (5)
 1. ✅ EPUB - Full EPUB generation
 2. ✅ HTML - Single-file HTML with embedded CSS/images
 3. ✅ TXT - Plain text extraction
-4. ✅ PDF - HTML-to-PDF conversion
-5. ✅ MOBI - Basic MOBI creation
+4. ⚠️ PDF - HTML-to-PDF conversion (optional renderer; fallback is minimal)
+5. ⚠️ MOBI - Basic MOBI creation (limited fidelity)
 
 ### Advanced Compression
 - ✅ PalmDoc decompression
-- ✅ **Huff/CDIC decompression** - Full implementation
+- ⚠️ **Huff/CDIC decompression** - Implemented but not fully wired to main extraction paths
 - ✅ Image extraction from MOBI files
 
 ### Conversion Engine
@@ -48,8 +45,8 @@ This document provides a comprehensive overview of the completed Calibre Kotlin 
 ### Search & Discovery
 - ✅ Basic search (title, author, tags, series)
 - ✅ Advanced search with multiple filters
-- ✅ **Full-Text Search (FTS)** - Content indexing
-- ✅ Search snippets and relevance scoring
+- ⚠️ **Full-Text Search (FTS)** - Content indexing prototype
+- ⚠️ Search snippets and relevance scoring (API-only, no UI/CLI hooks)
 
 ### Reading Features
 - ✅ Reading progress tracking
@@ -90,14 +87,14 @@ This document provides a comprehensive overview of the completed Calibre Kotlin 
 - ✅ HTTP content server
 - ✅ OPDS feed generation
 - ✅ Book download endpoints
-- ✅ **Authentication and user management**
+- ⚠️ **Authentication and user management** (basic implementation)
 - ✅ Session-based security
 
 ### News Fetching
-- ✅ RSS/Atom feed parser
-- ✅ Recipe-based news fetching
-- ✅ Article download and processing
-- ✅ Ebook generation from news articles
+- ⚠️ RSS/Atom feed parser + basic news fetcher
+- ⚠️ Recipe-based news fetching (API only)
+- ⚠️ Article download and processing (no scheduling/UI)
+- ⚠️ Ebook generation from news articles (no library integration)
 
 ### Editor Features
 - ✅ **Tweak Book editor**
@@ -108,11 +105,11 @@ This document provides a comprehensive overview of the completed Calibre Kotlin 
 - ✅ Manifest management
 
 ### Infrastructure
-- ✅ Structured logging system
+- ⚠️ Structured logging system (no initialization/rotation in app entry points)
 - ✅ Error handling
 - ✅ Comprehensive unit tests
 - ✅ Build scripts
-- ✅ Packaging scripts
+- ⚠️ Packaging scripts (no native installers/signing)
 
 ## 📊 Statistics
 
@@ -154,16 +151,16 @@ workspace/
 ## 🚀 Production Readiness
 
 ### Ready for Production
-- ✅ Core library management
-- ✅ Format conversion (major formats)
+- ⚠️ Core library management
+- ⚠️ Format conversion (major formats; fidelity gaps for PDF/MOBI)
 - ✅ Reading features
-- ✅ Search functionality
-- ✅ Server with authentication
-- ✅ News fetching
+- ⚠️ Search functionality (FTS incomplete)
+- ⚠️ Server with authentication (basic)
+- ⚠️ News fetching (API only)
 - ✅ Book editing
 
 ### Future Enhancements (Optional)
-- Enhanced MOBI output (full specification)
+- Complete MOBI/KF8 output fidelity (full specification)
 - MTP device support
 - Additional format support (LIT, LRF, PDB)
 - Enhanced OPDS features (pagination, search)
@@ -184,7 +181,7 @@ calibre search "author:Smith"
 # Convert
 calibre convert 1 epub output.epub
 
-# Full-text search
+# Full-text search (FTS prototype is API-only; CLI uses metadata search)
 calibre search "quantum physics"
 
 # Edit EPUB
@@ -194,7 +191,7 @@ calibre tweak edit book.epub chapter1.xhtml new_content.html
 # Start server
 calibre server 8080
 
-# News fetching
+# News fetching (API-only; no CLI wiring yet)
 calibre news fetch recipe.recipe output.epub
 ```
 
@@ -202,7 +199,7 @@ calibre news fetch recipe.recipe output.epub
 - Import books via SAF
 - Read with customizable settings
 - Track progress and bookmarks
-- Search library and content
+- Search library metadata (no full-text content search)
 - View statistics
 
 ### Desktop GUI
@@ -214,16 +211,16 @@ calibre news fetch recipe.recipe output.epub
 
 ## 🎯 Achievement Summary
 
-**All major features from the original Calibre Python codebase have been successfully converted to Kotlin!**
+**Major milestones are complete, but several high-priority features remain incomplete or only partially wired.**
 
-The project includes:
+The project currently includes:
 - ✅ Complete library management
-- ✅ Comprehensive format support
-- ✅ Advanced compression algorithms
-- ✅ Full-text search
+- ✅ Broad format support (with fidelity gaps for PDF/MOBI output)
+- ⚠️ Advanced compression algorithms (Huff/CDIC not fully integrated)
+- ⚠️ Full-text search prototype (API-only)
 - ✅ Reading features
-- ✅ Server with authentication
-- ✅ News fetching
+- ⚠️ Server with authentication (basic)
+- ⚠️ News fetching (API-only)
 - ✅ Book editing
 - ✅ Multi-platform support (Desktop + Android)
 
@@ -236,10 +233,10 @@ The project includes:
 
 ## 🎊 Conclusion
 
-The Calibre Kotlin conversion is **functionally complete** for all major use cases. The codebase is:
+The Calibre Kotlin conversion is **in active progress** for several major use cases. The codebase is:
 - Well-structured and modular
 - Extensively documented
-- Production-ready
+- Not yet production-ready
 - Maintainable and extensible
 
-All high-priority features have been implemented, tested, and integrated. The application is ready for use and further development!
+Several high-priority features (news fetching, FTS, logging, packaging, and output fidelity) still require completion and integration.

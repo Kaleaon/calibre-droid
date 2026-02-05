@@ -1,77 +1,75 @@
 # Calibre Python to Kotlin Conversion Status
 
-This document tracks the progress of converting Calibre's Python codebase to Kotlin.
+> **Source of truth:** This file is the authoritative status record for feature implementation and conversion progress. Other status documents (REMAINING_WORK.md, ROADMAP.md, FINAL_STATUS.md, COMPLETED_FEATURES.md) should reference this note to avoid drift.
 
-## Conversion Strategy
+## Scope
 
-As each Python file is fully converted to Kotlin and tested, the original Python file is deleted from the repository. This ensures only the Kotlin implementation remains.
+This status reflects verified code under `shared/`, `kotlin_app/`, and `android_app/`.
 
-## Completed Conversions
+## Conversion Infrastructure (Implemented)
 
-### Core Conversion Infrastructure ✅
+- Plugin interfaces (`InputPlugin`, `OutputPlugin`) and conversion pipeline
+- OEB intermediate data model
+- CSS processing / flattening helpers
+- PalmDoc compression helpers
 
-- **Plugins.kt** - InputPlugin and OutputPlugin interfaces with extensive documentation
-- **OebBook.kt** - OEB intermediate format data classes with extensive documentation
-- **ConversionPipeline.kt** - Main conversion orchestrator with extensive documentation
-- **CssProcessor.kt** - CSS processing with URL rewriting support
-- **PalmDocCompression.kt** - PalmDoc compression algorithm for MOBI format
+## Input Plugins (Current State)
 
-### Input Plugins ✅ (All Python files deleted)
+**Implemented (usable, though some parsers are simplified):**
+- EPUB, MOBI/AZW, AZW3, TXT, DOCX, RTF, FB2
+- HTML/OPF, HTMLZ
+- ODT, TCR, PML
+- Comic inputs (CBZ/CBR)
+- LIT, LRF, CHM, DJVU, PDB
 
-1. **EpubInput.kt** - EPUB format input ✅
-   - ✅ Deleted: `epub_input.py`
-   - Features: Full EPUB parsing, metadata extraction, resource handling
+**Placeholders / incomplete:**
+- PDF input (explicit placeholder; requires PDF parsing library integration)
+- AZW4, RB, SNB inputs (not fully implemented)
+- Recipe input (delegated to news subsystem, not a real converter)
 
-2. **MobiInput.kt** - MOBI/AZW format input ✅
-   - ✅ Deleted: `mobi_input.py`
-   - Features: MOBI 6 format support, text extraction, image extraction
+> Note: Several complex formats (LIT/LRF/CHM/DJVU/PDB/CBR) are implemented with simplified parsers and documented limitations in code comments.
 
-3. **Azw3Input.kt** - AZW3 (KF8) format input ✅
-   - Features: KF8-aware extraction, text and image extraction with fallback handling
+## Output Plugins (Current State)
 
-4. **TextInput.kt** - Plain text input ✅
-   - ✅ Deleted: `txt_input.py`
-   - Features: Encoding detection, proper HTML escaping, paragraph handling
+**Implemented (usable, though some are simplified):**
+- EPUB, HTML, TXT, FB2, DOCX, RTF, OEB, HTMLZ, PML, TCR
+- MOBI output (simplified; not full spec)
+- PDF output (uses OpenHTMLToPDF when available; fallback is basic PDFBox text output)
+- LIT/LRF/PDB/RB/SNB outputs (present but simplified)
 
-5. **DocxInput.kt** - DOCX format input ✅
-   - ✅ Deleted: `docx_input.py`
-   - Features: DOCX parsing, content extraction
+## Feature Inventory (Verified)
 
-6. **RtfInput.kt** - RTF format input ✅
-   - ✅ Deleted: `rtf_input.py`
-   - Features: RTF parsing, content extraction
+### Library & Metadata
+- JSON-backed library in `shared` with import/export
+- Optional SQLite-backed library (`SqliteLibrary`) and a basic Calibre `metadata.db` import service
 
-7. **Fb2Input.kt** - FictionBook 2.0 format input ✅
-   - ✅ Deleted: `fb2_input.py`
-   - Features: FB2 XML parsing, metadata and content extraction
+### Search
+- Metadata search and advanced filter search
+- Full-text search exists as an in-memory index with limited text extraction (HTML/EPUB/TXT). No persistence, no UI integration.
 
-8. **HtmlInput.kt** - HTML/OPF format input ✅
-   - ✅ Deleted: `html_input.py`
-   - Features: HTML parsing, OPF support, recursive link following
+### News Fetching
+- RSS/Atom parser, recipe interface, and a fetcher that builds an OEB book
+- No scheduler, recipe library management, or UI integration
 
-9. **HtmlzInput.kt** - HTMLZ format input ✅
-   - ✅ Deleted: `htmlz_input.py`
-   - Features: HTMLZ (ZIP of HTML) extraction, metadata from OPF
+### Logging
+- Simple logging utility with levels and optional file output
+- No log rotation or structured log export
 
 10. **PdfInput.kt** - PDF format input ✅
     - ✅ Deleted: `pdf_input.py`
     - Status: Implemented (basic conversion shell; full fidelity requires PDF parsing library integration)
 
-11. **OdtInput.kt** - ODT (OpenDocument Text) format input ✅
-    - ✅ Deleted: `odt_input.py`
-    - Features: ODT ZIP extraction, content.xml parsing, metadata extraction
+### Media Library / Plex-like Server (Experimental)
+- `MediaLibrary` + `MediaServer` exist in `shared` as prototypes
+- Not wired into CLI/desktop/Android apps and not production-ready
 
-12. **TcrInput.kt** - TCR (PalmDOC Compressed) format input ✅
-    - ✅ Deleted: `tcr_input.py`
-    - Features: PalmDoc decompression, text extraction
+### UI
+- Desktop: basic Swing UI and CLI for library/conversion tasks
+- Android: basic library list, reader, import, and reading progress
 
-13. **PmlInput.kt** - PML (Palm Markup Language) format input ✅
-    - ✅ Deleted: `pml_input.py`
-    - Features: PML/PMLZ extraction, basic PML to HTML conversion
+## Python Source Status
 
-14. **ComicInput.kt** - Comic book formats (CBZ) input ✅
-    - ✅ Deleted: `comic_input.py`
-    - Features: CBZ image extraction, page ordering, HTML generation
+Original Python sources remain in `src/`; this repo is not “Python deleted after conversion.”
 
 15. **LitInput.kt** - LIT format input ✅
     - ✅ Deleted: `lit_input.py`
@@ -193,6 +191,36 @@ They require specialized format parsers or are legacy formats:
 **Output Plugins:**
 - **RbOutput.kt** - RocketBook format - Not implemented (throws `UnsupportedOperationException`)
 - **SnbOutput.kt** - SNB format - Not implemented (throws `UnsupportedOperationException`)
+
+## High-Priority Feature Entry Points (Validated)
+
+### News Fetching (Partial)
+- **Core packages/classes**: `org.calibre.news.NewsFetcher`, `NewsRecipe`, `BasicNewsRecipe`
+- **Conversion hook**: `org.calibre.conversion.RecipeInput` (placeholder; defers to news system)
+- **Access**: API-only (no CLI/GUI wiring yet)
+
+### Full-Text Search (FTS) (Partial)
+- **Core package/class**: `org.calibre.search.FullTextSearch`
+- **Library integration**: `org.calibre.metadata.Library` indexes on import and exposes `fullTextSearch`
+- **Access**: API-only (CLI `search` uses metadata search)
+
+### Logging (Basic)
+- **Core package/class**: `org.calibre.utils.Logger` + `LogLevel`
+- **Access**: Used across shared modules; initialization must be done by app entry points (not wired yet)
+
+### Packaging/Distribution (Basic)
+- **Script entry point**: `scripts/package.sh` (builds desktop JAR; optionally Android APK)
+- **Access**: Scripted builds only; no native installers/signing flows
+
+### MOBI Output Fidelity (Partial)
+- **Core package/class**: `org.calibre.conversion.MobiOutput`
+- **Pipeline registration**: `org.calibre.conversion.ConversionPipeline`
+- **Access**: CLI `convert` command and conversion pipeline (basic PalmDoc; no KF8/images/indexing)
+
+### PDF Output Fidelity (Partial)
+- **Core package/class**: `org.calibre.conversion.PdfOutput`
+- **Pipeline registration**: `org.calibre.conversion.ConversionPipeline`
+- **Access**: CLI `convert` command and conversion pipeline (OpenHTMLToPDF optional; PDFBox fallback)
 
 ## Remaining Python Files
 
