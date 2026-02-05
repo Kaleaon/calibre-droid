@@ -11,13 +11,15 @@
     - [x] MOBI (Basic header parsing + PalmDoc decompression).
 - [x] **Online Metadata**: Fetch from Google Books API.
 
-## Phase 2: Format Expansion & Fidelity (COMPLETED)
+## Phase 2: Format Expansion & Fidelity (IN PROGRESS)
 - [x] **MOBI Input**: PalmDB/MOBI header parsing, text extraction.
 - [x] **MOBI Images**: Image extraction from MOBI records (JPEG, PNG, GIF).
 - [x] **Conversion Engine**:
     - [x] `InputPlugin` / `OutputPlugin` interfaces.
     - [x] `EpubInput`, `MobiInput`, `Azw3Input`, `TextInput`, **`DocxInput`**, **`RtfInput`**, **`Fb2Input`**.
-    - [x] `TextOutput`, `HtmlOutput`, **`EpubOutput`**, **`PdfOutput`**, **`MobiOutput`**.
+    - [x] `TextOutput`, `HtmlOutput`, **`EpubOutput`**
+    - [ ] **`PdfOutput`** (basic fidelity; optional renderer dependency)
+    - [ ] **`MobiOutput`** (basic fidelity; no KF8/images/indexes)
     - [x] **OEB Improvements**: Enhanced `OebBook` to handle CSS, Images properly.
     - [x] **CSS Flattening**: Implemented CSS processing via `CssProcessor`.
 
@@ -52,7 +54,7 @@
 - [x] **CLI Interface**: Commands for unpack, edit, add, remove, repack, list.
 - [ ] **Preview**: Live preview of edits (future enhancement).
 
-## Phase 6: Final Polish (COMPLETED)
+## Phase 6: Final Polish (IN PROGRESS)
 - [x] **Testing**: Comprehensive unit tests for parsers and Library operations.
 - [x] **Error Handling**: Comprehensive user-friendly error messages.
 - [x] **Advanced Features**:
@@ -66,12 +68,12 @@
     - [x] Collections/Tags Management UI
     - [x] Cover Image Caching
     - [x] Lazy Loading for Performance
-    - [x] **Full-Text Search (FTS)**: Content indexing and search
+    - [ ] **Full-Text Search (FTS)**: Content indexing and search (prototype only)
     - [x] **SQLite Backend**: Optional SQLite storage for large libraries
-    - [x] **Logging System**: Structured logging with file output
-    - [x] **News Fetching**: RSS feed fetching and ebook generation
-- [x] **Format Expansion**: DOCX, RTF, FB2 input support; PDF, MOBI output.
+    - [ ] **Logging System**: Structured logging with file output (no app initialization/rotation)
+    - [ ] **News Fetching**: RSS feed fetching and ebook generation (API-only; no scheduler/UI)
+- [ ] **Format Expansion**: DOCX, RTF, FB2 input support; PDF, MOBI output (fidelity gaps).
 - [x] **Desktop GUI Enhancements**: Progress indicators, statistics view.
-- [x] **Packaging**: Build scripts for distribution.
+- [ ] **Packaging**: Build scripts for distribution (no native installers/signing).
 - [ ] **I18n**: Complete translations (ES, DE, FR, etc.).
 - [ ] **Native Installers**: MSI, DMG, APK packaging (requires platform-specific tools).

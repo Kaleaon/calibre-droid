@@ -203,6 +203,36 @@ They require specialized format parsers or are legacy formats:
 - **RbOutput.kt** - RocketBook format - Requires RocketBook format implementation
 - **SnbOutput.kt** - SNB format - Requires SNB format implementation
 
+## High-Priority Feature Entry Points (Validated)
+
+### News Fetching (Partial)
+- **Core packages/classes**: `org.calibre.news.NewsFetcher`, `NewsRecipe`, `BasicNewsRecipe`
+- **Conversion hook**: `org.calibre.conversion.RecipeInput` (placeholder; defers to news system)
+- **Access**: API-only (no CLI/GUI wiring yet)
+
+### Full-Text Search (FTS) (Partial)
+- **Core package/class**: `org.calibre.search.FullTextSearch`
+- **Library integration**: `org.calibre.metadata.Library` indexes on import and exposes `fullTextSearch`
+- **Access**: API-only (CLI `search` uses metadata search)
+
+### Logging (Basic)
+- **Core package/class**: `org.calibre.utils.Logger` + `LogLevel`
+- **Access**: Used across shared modules; initialization must be done by app entry points (not wired yet)
+
+### Packaging/Distribution (Basic)
+- **Script entry point**: `scripts/package.sh` (builds desktop JAR; optionally Android APK)
+- **Access**: Scripted builds only; no native installers/signing flows
+
+### MOBI Output Fidelity (Partial)
+- **Core package/class**: `org.calibre.conversion.MobiOutput`
+- **Pipeline registration**: `org.calibre.conversion.ConversionPipeline`
+- **Access**: CLI `convert` command and conversion pipeline (basic PalmDoc; no KF8/images/indexing)
+
+### PDF Output Fidelity (Partial)
+- **Core package/class**: `org.calibre.conversion.PdfOutput`
+- **Pipeline registration**: `org.calibre.conversion.ConversionPipeline`
+- **Access**: CLI `convert` command and conversion pipeline (OpenHTMLToPDF optional; PDFBox fallback)
+
 ## Remaining Python Files
 
 **✅ ALL CONVERSION PLUGIN FILES HAVE BEEN CONVERTED!**
