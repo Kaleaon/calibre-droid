@@ -4,7 +4,7 @@
 
 This document provides a comprehensive overview of the Calibre Kotlin conversion project and notes where work remains incomplete.
 
-## ✅ Completed Features Summary
+The Kotlin conversion is **functional for core ebook management and conversion**, but several major systems remain partial or experimental (FTS persistence, news scheduling, media server integration, format fidelity for complex formats).
 
 ### Core Library Management
 - ✅ JSON-based library storage
@@ -14,17 +14,14 @@ This document provides a comprehensive overview of the Calibre Kotlin conversion
 - ✅ Library export/import
 - ⚠️ Full-text search prototype (in-memory index; limited extractors; no UI/CLI wiring)
 
-### Format Support
+- JSON-backed library management with metadata, reading progress, bookmarks
+- Conversion pipeline with OEB model and a wide set of input/output plugins (some simplified)
+- Basic HTTP content server with OPDS 1.2 feed generation
+- RSS/Atom news fetching (basic)
+- Simple logging utility
+- Desktop Swing UI, CLI, and Android reader app (basic feature set)
 
-#### Input Formats (8)
-1. ✅ EPUB - Full support with metadata, images, CSS
-2. ✅ MOBI/AZW - Header parsing, PalmDoc decompression
-3. ✅ AZW3 - Basic support
-4. ✅ PDF - Desktop parsing with PDFBox
-5. ✅ TXT - Plain text
-6. ✅ DOCX - Word document extraction
-7. ✅ RTF - Rich text format
-8. ✅ FB2 - FictionBook format
+## Partial / Experimental
 
 #### Output Formats (5)
 1. ✅ EPUB - Full EPUB generation

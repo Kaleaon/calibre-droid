@@ -204,18 +204,19 @@
 
 ## Code Quality (Ongoing)
 
-### 21. **Code Cleanup**
-- Unused variables (many warnings)
-- Better error messages
-- Code documentation
-- API documentation
+### 5. Media Server (Experimental)
+- **Current**: `MediaLibrary` + `MediaServer` prototypes in `shared`.
+- **Missing**:
+  - Integration into CLI/desktop/Android apps
+  - Stable API/UX surface
+  - Production-grade streaming and auth
 
-### 22. **Better Error Recovery**
-- Graceful degradation
-- Partial conversion support
-- Better validation
+## Medium Priority Gaps
 
-## Estimated Completion
+### 6. Format Fidelity Improvements
+- PDF input is a placeholder (needs PDF parsing integration).
+- MOBI output is simplified (no KF8/Huff/CDIC, limited metadata handling).
+- Several complex formats (LIT/LRF/CHM/DJVU/PDB) rely on simplified parsers.
 
 ### Core Functionality: **~85% Complete**
 - ✅ Library management
@@ -226,10 +227,8 @@
 - ⚠️ Full-text search (partial)
 - ⚠️ PDF/MOBI output (partial)
 
-### Format Support: **~40% Complete**
-- ✅ 6 input formats
-- ✅ 3 output formats
-- ❌ Many more formats available in Calibre
+### 8. Packaging / Distribution
+- Desktop installers, Android release pipeline, and reproducible build docs.
 
 ### Production Readiness: **~60% Complete**
 - ✅ Basic features work
@@ -238,12 +237,10 @@
 - ⚠️ Logging (partial)
 - ⚠️ Packaging (partial)
 
-## Recommended Next Steps (Priority Order)
+## Recommended Next Steps
 
-1. **PDF Output Plugin** - High demand, moderate complexity
-2. **Full-Text Search** - Essential for usability
-3. **Comprehensive Testing** - Quality assurance
-4. **Logging System** - Debugging and monitoring
-5. **News Fetching** - Major Calibre feature
-6. **MOBI Output** - Kindle compatibility
-7. **Packaging** - Distribution readiness
+1. Persist FTS index + wire into CLI/GUI search.
+2. Stabilize news fetching (scheduler + recipe management).
+3. Decide on media server direction (integrate or remove prototypes).
+4. Improve PDF input + MOBI output fidelity.
+5. Expand tests and CI coverage.
