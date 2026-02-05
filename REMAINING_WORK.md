@@ -3,58 +3,64 @@
 ## Critical Missing Features (High Priority)
 
 ### 1. **News Fetching System** (Major Calibre Feature)
-- **Status**: Not Started
+- **Status**: Partial
 - **Complexity**: High
 - **Impact**: High - Core Calibre feature for RSS/website content
 - **What's Needed**:
-  - Recipe system (RSS/website parsing)
-  - Recipe input plugin
-  - News download scheduling
-  - Recipe collection management
-- **Files to Port**: `src/calibre/web/feeds/`, `src/calibre/web/fetch/`
+  - Recipe catalog/management (built-in + custom)
+  - News download scheduling + UI/CLI entry points
+  - Recipe collection management + persistence
+  - Rich article extraction (readability, images)
+  - Integration with conversion pipeline and library
+- **Current State**: Basic RSS parser + `NewsFetcher` exist, but no scheduling, UI/CLI, or recipe repository integration.
+  - **Files to Port**: `src/calibre/web/feeds/`, `src/calibre/web/fetch/`
 
 ### 2. **Full-Text Search (FTS)**
-- **Status**: Not Started
+- **Status**: Partial
 - **Complexity**: Medium
 - **Impact**: High - Essential for large libraries
 - **What's Needed**:
-  - Index book content (text extraction)
-  - Search index storage
-  - Query interface
-  - Integration with search UI
-- **Files to Port**: `src/calibre/srv/fts.py`
+  - Persistent index storage (disk/DB-backed)
+  - Robust text extraction for MOBI/PDF/EPUB
+  - Query interface exposed in CLI/GUI
+  - Search UI integration (snippets, ranking)
+- **Current State**: In-memory index with limited extractors; no persistence or UI/CLI hooks.
+  - **Files to Port**: `src/calibre/srv/fts.py`
 
 ### 3. **PDF Output Plugin**
-- **Status**: Not Started
+- **Status**: Partial
 - **Complexity**: High
 - **Impact**: Medium - Common output format
 - **What's Needed**:
-  - PDF generation from OEB
-  - Text layout and formatting
-  - Image embedding
+  - PDF generation from OEB with consistent layout and pagination
+  - Proper CSS support, fonts, and image placement
   - Metadata embedding
-- **Dependencies**: PDFBox or iText
+  - Reliable rendering dependency wiring
+- **Current State**: HTML-to-PDF rendering via OpenHTMLToPDF (reflection) with PDFBox fallback; fidelity varies and dependencies are optional.
+  - **Dependencies**: OpenHTMLToPDF + PDFBox
 
 ### 4. **MOBI Output Plugin**
-- **Status**: Not Started
+- **Status**: Partial
 - **Complexity**: Very High
 - **Impact**: Medium - Kindle compatibility
 - **What's Needed**:
-  - MOBI/KF8 file generation
-  - Record structure creation
-  - Compression (PalmDoc/Huff/CDIC)
-  - Index generation
-- **Files to Port**: `src/calibre/ebooks/mobi/writer8/`
+  - Full MOBI/KF8 generation (KF8/AZW3)
+  - Robust record/index generation and navigation
+  - Image embedding and NCX/guide support
+  - Optional Huff/CDIC compression
+- **Current State**: Simplified MOBI writer with PalmDoc compression and minimal metadata; no KF8, images, or indexes.
+  - **Files to Port**: `src/calibre/ebooks/mobi/writer8/`
 
 ### 5. **Enhanced MOBI Support**
 - **Status**: Partial
 - **Complexity**: High
 - **Impact**: Medium
 - **What's Needed**:
-  - Huff/CDIC decompression (currently shows error)
+  - Wire Huff/CDIC decompression into standard MOBI text extraction
   - KF8 (AZW3) full support
   - Better HTML reconstruction from MOBI records
-- **Files to Port**: `src/calibre/ebooks/mobi/huffcdic.py`
+- **Current State**: Huff/CDIC decompressor exists, but main extraction path still returns a warning for Huff/CDIC content.
+  - **Files to Port**: `src/calibre/ebooks/mobi/huffcdic.py`
 
 ## Additional Format Support (Medium Priority)
 
@@ -150,14 +156,16 @@
   - Performance tests
 
 ### 17. **Logging System**
-- **Status**: Not Started
+- **Status**: Partial
 - **Complexity**: Low
 - **Impact**: High - Essential for debugging
 - **What's Needed**:
-  - Structured logging
-  - Log levels
-  - File rotation
-  - Error tracking
+  - Centralized initialization + configuration
+  - Log levels/formatting in all entry points
+  - File rotation/retention
+  - Error tracking/telemetry hooks
+  - Consistent log destinations
+  - **Current State**: Basic Logger exists with console/file output, but no rotation or wiring in app entry points.
 
 ### 18. **Performance for Large Libraries**
 - **Status**: Basic lazy loading
@@ -176,7 +184,7 @@
 - **What's Needed**: More language files (DE, FR, IT, etc.)
 
 ### 20. **Packaging & Distribution**
-- **Status**: Not Started
+- **Status**: Partial
 - **Complexity**: Medium
 - **Impact**: High - Required for distribution
 - **What's Needed**:
@@ -185,6 +193,14 @@
   - Linux packages (DEB, RPM)
   - Android APK signing
   - App store submissions
+  - **Current State**: Scripted build + jar packaging; no native installers or signing flow.
+
+## Most urgent next steps
+- Wire news fetching into CLI/GUI with recipe selection, scheduling, and storage.
+- Persist the FTS index and expose a CLI/GUI search mode that uses it.
+- Initialize logging at app startup with file rotation and configurable log levels.
+- Add installer packaging (MSI/DMG/DEB/RPM) plus Android signing configuration.
+- Improve MOBI/PDF output fidelity (KF8 support, images, robust HTML/CSS rendering).
 
 ## Code Quality (Ongoing)
 
@@ -206,9 +222,9 @@
 - ✅ Basic conversion
 - ✅ Reading features
 - ✅ Android/Desktop UIs
-- ❌ News fetching
-- ❌ Full-text search
-- ❌ PDF/MOBI output
+- ⚠️ News fetching (partial)
+- ⚠️ Full-text search (partial)
+- ⚠️ PDF/MOBI output (partial)
 
 ### Format Support: **~40% Complete**
 - ✅ 6 input formats
@@ -219,8 +235,8 @@
 - ✅ Basic features work
 - ✅ Error handling
 - ❌ Comprehensive testing
-- ❌ Logging
-- ❌ Packaging
+- ⚠️ Logging (partial)
+- ⚠️ Packaging (partial)
 
 ## Recommended Next Steps (Priority Order)
 
