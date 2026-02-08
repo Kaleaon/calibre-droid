@@ -1,6 +1,5 @@
 package org.calibre.conversion
 
-import org.calibre.oeb.OebBook
 import org.calibre.utils.Logger
 import java.io.ByteArrayOutputStream
 import java.io.File
@@ -17,9 +16,7 @@ import java.util.zip.Deflater
 class LrfOutput : OutputPlugin {
     
     override val name = "LRF Output"
-    override val author = "Calibre Kotlin"
-    override val description = "Converts ebooks to LRF (Sony Reader) format"
-    override val outputFormat = "lrf"
+    override val fileType = "lrf"
     
     companion object {
         private const val LRF_SIGNATURE = "LRF"
@@ -39,7 +36,7 @@ class LrfOutput : OutputPlugin {
         private const val OBJECT_STYLE = 10
     }
     
-    override fun convert(book: OebBook, outputFile: File, workDir: File) {
+    override fun convert(book: OebBook, outputFile: File) {
         val output = ByteArrayOutputStream()
         
         // Extract text content from OEB
@@ -246,7 +243,7 @@ class LrfOutput : OutputPlugin {
         val sb = StringBuilder()
         
         for (item in book.spine) {
-            if (item.file?.exists() == true && item.mediaType.contains("html")) {
+            if (item.file.exists() && item.mediaType.contains("html")) {
                 val html = item.file.readText()
                 // Simple HTML to text conversion
                 val text = html
@@ -277,7 +274,7 @@ class LrfOutput : OutputPlugin {
         val images = mutableMapOf<String, ByteArray>()
         
         for ((id, item) in book.manifest) {
-            if (item.mediaType.startsWith("image/") && item.file?.exists() == true) {
+            if (item.mediaType.startsWith("image/") && item.file.exists()) {
                 images[item.href] = item.file.readBytes()
             }
         }

@@ -1,6 +1,7 @@
 plugins {
     id("com.android.application")
     id("org.jetbrains.kotlin.android")
+    id("com.google.devtools.ksp")
 }
 
 android {
@@ -19,14 +20,31 @@ android {
 
     sourceSets {
         getByName("main") {
-            java.srcDir("../../shared/src/main/kotlin")
-            resources.srcDir("../../shared/src/main/resources")
+            // Only include the Android-safe subset of the shared Kotlin port.
+            // (The full shared tree contains desktop/server code that doesn't compile on Android.)
+            java.setSrcDirs(
+                listOf(
+                    "src/main/java",
+                    "../../shared/src/main/kotlin/org/calibre/metadata",
+                    "../../shared/src/main/kotlin/org/calibre/search",
+                    "../../shared/src/main/kotlin/org/calibre/utils",
+                    "../../shared/src/main/kotlin/org/calibre/formats/mobi",
+                    "../../shared/src/main/kotlin/org/calibre/formats/rar",
+                    "../../shared/src/main/kotlin/org/calibre/formats/chm",
+                    "../../shared/src/main/kotlin/org/calibre/formats/djvu",
+                    "../../shared/src/main/kotlin/org/calibre/formats/lit",
+                    "../../shared/src/main/kotlin/org/calibre/formats/lrf",
+                    "../../shared/src/main/kotlin/org/calibre/formats/pdb",
+                    "../../shared/src/main/kotlin/org/calibre/conversion"
+                )
+            )
         }
     }
 
     buildTypes {
         release {
-            isMinifyEnabled = false
+            isMinifyEnabled = true
+            isShrinkResources = true
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro"
@@ -43,6 +61,11 @@ android {
     buildFeatures {
         viewBinding = true
     }
+    testOptions {
+        unitTests {
+            isIncludeAndroidResources = true
+        }
+    }
     packaging {
         resources {
             excludes += "/META-INF/{AL2.0,LGPL2.1}"
@@ -53,10 +76,17 @@ android {
 
 dependencies {
     implementation("androidx.core:core-ktx:1.12.0")
+    implementation("androidx.activity:activity-ktx:1.9.2")
     implementation("androidx.appcompat:appcompat:1.6.1")
     implementation("com.google.android.material:material:1.11.0")
     implementation("androidx.constraintlayout:constraintlayout:2.1.4")
     implementation("androidx.recyclerview:recyclerview:1.3.2")
+    implementation("androidx.work:work-runtime-ktx:2.9.0")
+    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.8.1")
+
+    implementation("androidx.room:room-runtime:2.6.1")
+    implementation("androidx.room:room-ktx:2.6.1")
+    ksp("androidx.room:room-compiler:2.6.1")
     
     implementation("com.fasterxml.jackson.core:jackson-databind:2.15.2")
     implementation("com.fasterxml.jackson.module:jackson-module-kotlin:2.15.2")
@@ -65,6 +95,11 @@ dependencies {
     implementation("com.tom-roush:pdfbox-android:2.0.27.0")
     
     testImplementation("junit:junit:4.13.2")
+    testImplementation("androidx.test:core:1.5.0")
+    testImplementation("org.robolectric:robolectric:4.12.2")
+
+    testImplementation("androidx.room:room-testing:2.6.1")
+
     androidTestImplementation("androidx.test.ext:junit:1.1.5")
     androidTestImplementation("androidx.test.espresso:espresso-core:3.5.1")
 }

@@ -95,7 +95,18 @@ class LitParser(private val data: ByteArray) {
     private fun extractName(offset: Int): String {
         if (offset < 0 || offset >= data.size) return ""
         
-        val endPos = data.indexOf(0.toByte(), offset)
+        // ByteArray.indexOf does not support startIndex on all Kotlin targets; do a manual scan.
+        var endPos = -1
+        run {
+            var i = offset
+            while (i < data.size) {
+                if (data[i] == 0.toByte()) {
+                    endPos = i
+                    break
+                }
+                i++
+            }
+        }
         val actualEnd = if (endPos > offset) endPos else minOf(offset + 256, data.size)
         
         return try {

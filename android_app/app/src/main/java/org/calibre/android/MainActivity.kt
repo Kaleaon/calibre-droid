@@ -3,6 +3,9 @@ package org.calibre.android
 import android.content.Intent
 import android.net.Uri
 import android.os.Bundle
+import android.os.Handler
+import android.os.Looper
+import android.util.LruCache
 import android.view.LayoutInflater
 import android.view.Menu
 import android.view.MenuItem
@@ -11,24 +14,44 @@ import android.view.ViewGroup
 import android.widget.ImageView
 import android.widget.TextView
 import android.widget.Toast
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.widget.SearchView
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
+import androidx.work.Data
+import androidx.work.OneTimeWorkRequestBuilder
+import androidx.work.WorkManager
 import org.calibre.android.databinding.ActivityMainBinding
-import org.calibre.metadata.Library
 import org.calibre.metadata.Metadata
 import java.io.File
 import java.io.FileOutputStream
+import java.util.zip.ZipInputStream
+import java.util.zip.ZipOutputStream
+import java.util.concurrent.Executors
 
 class MainActivity : AppCompatActivity() {
 
     private lateinit var binding: ActivityMainBinding
-    private lateinit var library: Library
+    private lateinit var library: AndroidLibrary
     private lateinit var adapter: BookAdapter
-    
-    companion object {
-        private const val REQUEST_CODE_IMPORT = 1001
+
+    private val importBookLauncher = registerForActivityResult(
+        ActivityResultContracts.OpenDocument()
+    ) { uri ->
+        uri?.let { enqueueImport(it) }
+    }
+
+    private val exportLibraryLauncher = registerForActivityResult(
+        ActivityResultContracts.CreateDocument("application/zip")
+    ) { uri ->
+        uri?.let { exportBackupToUri(it) }
+    }
+
+    private val importLibraryLauncher = registerForActivityResult(
+        ActivityResultContracts.OpenDocument()
+    ) { uri ->
+        uri?.let { importBackupFromUri(it) }
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -53,6 +76,16 @@ class MainActivity : AppCompatActivity() {
         val searchView = searchItem?.actionView as? SearchView
         searchView?.setOnQueryTextListener(object : SearchView.OnQueryTextListener {
             override fun onQueryTextSubmit(query: String?): Boolean {
+                query?.let {
+                    val q = it.trim()
+                    if (q.startsWith("fts:", ignoreCase = true) || q.startsWith("content:", ignoreCase = true)) {
+                        val term = q.substringAfter(":").trim()
+                        val results = if (term.isBlank()) emptyList() else library.fullTextSearch(term)
+                        adapter.updateData(results)
+                        updateEmptyView()
+                        return true
+                    }
+                }
                 return false
             }
             
@@ -79,6 +112,14 @@ class MainActivity : AppCompatActivity() {
             }
             R.id.action_recently_read -> {
                 showRecentlyRead()
+                true
+            }
+            R.id.action_export_library -> {
+                exportLibraryLauncher.launch("calibre-droid-backup.zip")
+                true
+            }
+            R.id.action_import_library -> {
+                importLibraryLauncher.launch(arrayOf("application/zip", "*/*"))
                 true
             }
             else -> super.onOptionsItemSelected(item)
@@ -124,55 +165,74 @@ class MainActivity : AppCompatActivity() {
     }
     
     private fun openFilePicker() {
-        val intent = Intent(Intent.ACTION_GET_CONTENT).apply {
-            type = "*/*"
-            addCategory(Intent.CATEGORY_OPENABLE)
-            putExtra(Intent.EXTRA_MIME_TYPES, arrayOf(
+        importBookLauncher.launch(
+            arrayOf(
                 "application/epub+zip",
                 "application/x-mobipocket-ebook",
                 "application/pdf",
-                "text/plain"
-            ))
-        }
-        startActivityForResult(Intent.createChooser(intent, "Select Book File"), REQUEST_CODE_IMPORT)
+                "text/plain",
+                "text/html",
+                "*/*"
+            )
+        )
     }
     
-    override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
-        super.onActivityResult(requestCode, resultCode, data)
-        
-        if (requestCode == REQUEST_CODE_IMPORT && resultCode == RESULT_OK) {
-            data?.data?.let { uri ->
-                importBook(uri)
-            }
-        }
-    }
-    
-    private fun importBook(uri: Uri) {
+    private fun enqueueImport(uri: Uri) {
         try {
-            contentResolver.openInputStream(uri)?.use { inputStream ->
-                // Get filename from URI
-                val fileName = getFileName(uri) ?: "imported_book"
-                val extension = fileName.substringAfterLast('.', "")
-                
-                // Create temp file in app's cache
-                val tempFile = File(cacheDir, "import_${System.currentTimeMillis()}.$extension")
-                FileOutputStream(tempFile).use { outputStream ->
-                    inputStream.copyTo(outputStream)
-                }
-                
-                // Import using Library
-                val id = library.importBook(tempFile)
-                
-                // Clean up temp file
-                tempFile.delete()
-                
-                Toast.makeText(this, "Book imported: ID $id", Toast.LENGTH_SHORT).show()
-                refreshList()
-            } ?: run {
-                Toast.makeText(this, "Error: Could not open file", Toast.LENGTH_SHORT).show()
+            // Persist permission when possible (OpenDocument grants persistable permission)
+            try {
+                contentResolver.takePersistableUriPermission(
+                    uri,
+                    Intent.FLAG_GRANT_READ_URI_PERMISSION
+                )
+            } catch (_: SecurityException) {
+                // Some providers don't allow persistable grants; worker will still try immediately.
             }
+
+            val fileName = getFileName(uri) ?: "imported_book"
+            val mime = contentResolver.getType(uri) ?: "application/octet-stream"
+
+            val input = Data.Builder()
+                .putString(org.calibre.android.work.ImportBookWorker.KEY_URI, uri.toString())
+                .putString(org.calibre.android.work.ImportBookWorker.KEY_DISPLAY_NAME, fileName)
+                .putString(org.calibre.android.work.ImportBookWorker.KEY_MIME_TYPE, mime)
+                .build()
+
+            val request = OneTimeWorkRequestBuilder<org.calibre.android.work.ImportBookWorker>()
+                .setInputData(input)
+                .build()
+
+            WorkManager.getInstance(this).enqueue(request)
+            Toast.makeText(this, "Import queued", Toast.LENGTH_SHORT).show()
         } catch (e: Exception) {
             Toast.makeText(this, "Import failed: ${e.message}", Toast.LENGTH_LONG).show()
+        }
+    }
+
+    private fun exportBackupToUri(uri: Uri) {
+        try {
+            contentResolver.openOutputStream(uri)?.use { out ->
+                ZipOutputStream(out).use { zip ->
+                    library.exportBackupZip(zip)
+                }
+            } ?: throw Exception("Could not open output stream")
+            Toast.makeText(this, "Backup exported", Toast.LENGTH_SHORT).show()
+        } catch (e: Exception) {
+            Toast.makeText(this, "Backup export failed: ${e.message}", Toast.LENGTH_LONG).show()
+        }
+    }
+
+    private fun importBackupFromUri(uri: Uri) {
+        try {
+            contentResolver.openInputStream(uri)?.use { input ->
+                ZipInputStream(input).use { zip ->
+                    library.importBackupZip(zip)
+                }
+            } ?: throw Exception("Could not open input stream")
+            Toast.makeText(this, "Backup imported", Toast.LENGTH_SHORT).show()
+            refreshList()
+        } catch (e: Exception) {
+            Toast.makeText(this, "Backup import failed: ${e.message}", Toast.LENGTH_LONG).show()
         }
     }
     
@@ -190,10 +250,8 @@ class MainActivity : AppCompatActivity() {
         }
         if (result == null) {
             result = uri.path
-            val cut = result?.lastIndexOf('/')
-            if (cut != -1) {
-                result = result?.substring(cut + 1)
-            }
+            val cut = result?.lastIndexOf('/') ?: -1
+            if (cut != -1) result = result?.substring(cut + 1)
         }
         return result
     }
@@ -201,6 +259,13 @@ class MainActivity : AppCompatActivity() {
     override fun onResume() {
         super.onResume()
         refreshList()
+    }
+
+    override fun onDestroy() {
+        super.onDestroy()
+        if (::adapter.isInitialized) {
+            adapter.shutdown()
+        }
     }
 
     private fun setupRecyclerView() {
@@ -232,19 +297,40 @@ class MainActivity : AppCompatActivity() {
     }
 
     class BookAdapter(
-        private val library: Library,
+        private val library: AndroidLibrary,
         private var books: List<Metadata>,
         private val onItemClick: (Metadata) -> Unit
     ) : RecyclerView.Adapter<BookAdapter.BookViewHolder>() {
-        
-        // Lazy loading: only load covers for visible items
-        private val coverCache = mutableMapOf<Int, android.graphics.Bitmap?>()
+
+        private val coverLock = Any()
+
+        // Lazy loading: only load covers for visible items (bounded, avoids OOM)
+        private val coverCache: LruCache<Int, android.graphics.Bitmap> = object :
+            LruCache<Int, android.graphics.Bitmap>(calculateCacheSizeBytes()) {
+            override fun sizeOf(key: Int, value: android.graphics.Bitmap): Int = value.byteCount
+        }
+        private val noCover = mutableSetOf<Int>()
+        private val mainHandler = Handler(Looper.getMainLooper())
+        private val executor = Executors.newFixedThreadPool(2)
+
+        private fun calculateCacheSizeBytes(): Int {
+            val maxKb = (Runtime.getRuntime().maxMemory() / 1024).toInt()
+            val cacheKb = (maxKb / 32).coerceAtLeast(1024) // ~3% heap, min 1MB
+            return cacheKb * 1024
+        }
 
         fun updateData(newBooks: List<Metadata>) {
             books = newBooks
             // Clear cache when data changes
-            coverCache.clear()
+            synchronized(coverLock) {
+                coverCache.evictAll()
+                noCover.clear()
+            }
             notifyDataSetChanged()
+        }
+
+        fun shutdown() {
+            executor.shutdown()
         }
 
         override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): BookViewHolder {
@@ -265,7 +351,7 @@ class MainActivity : AppCompatActivity() {
             private val authorView: TextView = itemView.findViewById(R.id.book_author)
             private val coverView: ImageView? = itemView.findViewById(R.id.book_cover)
 
-            fun bind(book: Metadata, library: Library, adapter: BookAdapter) {
+            fun bind(book: Metadata, library: AndroidLibrary, adapter: BookAdapter) {
                 titleView.text = book.title
                 authorView.text = book.authors.joinToString(", ")
                 
@@ -278,45 +364,79 @@ class MainActivity : AppCompatActivity() {
                 // Load cover image with caching
                 coverView?.let { imageView ->
                     val bookId = book.id ?: 0
+                    imageView.tag = bookId
                     
                     // Check cache first
-                    val cached = adapter.coverCache[bookId]
+                    val cached = synchronized(adapter.coverLock) { adapter.coverCache.get(bookId) }
                     if (cached != null) {
                         imageView.setImageBitmap(cached)
-                    } else {
-                        // Load placeholder first
-                        imageView.setImageResource(android.R.drawable.ic_menu_gallery)
-                        
-                        // Load cover asynchronously (simplified - in production use coroutines/thread pool)
-                        loadCoverImageAsync(bookId, library, imageView, adapter)
+                        return
                     }
+
+                    // Known missing cover: avoid repeated work
+                    if (synchronized(adapter.coverLock) { adapter.noCover.contains(bookId) }) {
+                        imageView.setImageResource(android.R.drawable.ic_menu_gallery)
+                        return
+                    }
+
+                    // Placeholder while loading
+                    imageView.setImageResource(android.R.drawable.ic_menu_gallery)
+                    loadCoverImageAsync(bookId, library, imageView, adapter)
                 }
             }
             
             private fun loadCoverImageAsync(
                 bookId: Int,
-                library: Library,
+                library: AndroidLibrary,
                 imageView: ImageView,
                 adapter: BookAdapter
             ) {
-                // In a real app, use coroutines or background thread
-                // For now, load on current thread (could cause jank with many books)
-                try {
-                    val bookFile = library.getBookFile(bookId)
-                    if (bookFile != null && bookFile.extension.equals("epub", ignoreCase = true)) {
-                        val coverBytes = org.calibre.metadata.CoverExtractor.extractCoverFromEpub(bookFile)
-                        if (coverBytes != null) {
-                            val bitmap = android.graphics.BitmapFactory.decodeByteArray(coverBytes, 0, coverBytes.size)
-                            // Cache the bitmap
-                            adapter.coverCache[bookId] = bitmap
-                            imageView.setImageBitmap(bitmap)
-                            return
+                adapter.executor.execute {
+                    try {
+                        val bookFile = library.getBookFile(bookId)
+                        if (bookFile != null && bookFile.extension.equals("epub", ignoreCase = true)) {
+                            val coverBytes = org.calibre.metadata.CoverExtractor.extractCoverFromEpub(bookFile)
+                            if (coverBytes != null) {
+                                val bitmap = decodeScaledBitmap(coverBytes, maxDimPx = 256)
+                                if (bitmap != null) {
+                                    synchronized(adapter.coverLock) {
+                                        adapter.coverCache.put(bookId, bitmap)
+                                    }
+                                    adapter.mainHandler.post {
+                                        // Ensure this view holder still represents the same book
+                                        if (imageView.tag == bookId) {
+                                            imageView.setImageBitmap(bitmap)
+                                        }
+                                    }
+                                    return@execute
+                                }
+                            }
                         }
+                    } catch (_: Exception) {
+                        // fall through
                     }
-                } catch (e: Exception) {
-                    // Fall through to placeholder
+                    synchronized(adapter.coverLock) {
+                        adapter.noCover.add(bookId)
+                    }
                 }
-                adapter.coverCache[bookId] = null // Cache null to avoid retrying
+            }
+
+            private fun decodeScaledBitmap(bytes: ByteArray, maxDimPx: Int): android.graphics.Bitmap? {
+                val opts = android.graphics.BitmapFactory.Options().apply { inJustDecodeBounds = true }
+                android.graphics.BitmapFactory.decodeByteArray(bytes, 0, bytes.size, opts)
+                if (opts.outWidth <= 0 || opts.outHeight <= 0) return null
+
+                var inSampleSize = 1
+                val largestDim = maxOf(opts.outWidth, opts.outHeight)
+                while (largestDim / inSampleSize > maxDimPx) {
+                    inSampleSize *= 2
+                }
+
+                val decodeOpts = android.graphics.BitmapFactory.Options().apply {
+                    this.inSampleSize = inSampleSize.coerceAtLeast(1)
+                    this.inPreferredConfig = android.graphics.Bitmap.Config.RGB_565
+                }
+                return android.graphics.BitmapFactory.decodeByteArray(bytes, 0, bytes.size, decodeOpts)
             }
         }
     }

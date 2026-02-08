@@ -126,7 +126,7 @@ class PdbInput : InputPlugin {
         
         val metadata = Metadata(
             title = title,
-            authors = pdbMetadata["author"]?.let { listOf(it) } ?: emptyList()
+            authors = pdbMetadata["author"]?.let { mutableListOf(it) } ?: mutableListOf()
         )
         
         // Extract text content

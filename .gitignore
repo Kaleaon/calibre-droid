@@ -56,3 +56,9 @@
 /cmake-build-*
 /bypy/b
 /bypy/virtual-machines.conf
+
+# Android (do not commit SDK or local machine config)
+/.android-sdk/
+/android_app/local.properties
+/android_app/.gradle/
+/android_app/**/build/

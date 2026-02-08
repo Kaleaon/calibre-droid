@@ -27,7 +27,7 @@ class Fb2Input : InputPlugin {
         val authors = mutableListOf<String>()
         val authorNodes = titleInfo.getElementsByTagName("author")
         for (i in 0 until authorNodes.length) {
-            val author = authorNodes.item(i) as? Element
+            val author = authorNodes.item(i) as? Element ?: continue
             val firstName = getTextContent(author, "first-name") ?: ""
             val lastName = getTextContent(author, "last-name") ?: ""
             val middleName = getTextContent(author, "middle-name") ?: ""
@@ -47,11 +47,11 @@ class Fb2Input : InputPlugin {
         val metadata = Metadata(
             title = title,
             authors = authors,
-            language = language,
-            description = annotation,
+            tags = if (genre != null) mutableListOf(genre) else mutableListOf(),
+            comments = annotation,
             publisher = publisher,
             isbn = isbn,
-            tags = if (genre != null) mutableListOf(genre) else mutableListOf()
+            languages = mutableListOf(language)
         )
         
         val book = OebBook(metadata = metadata)
@@ -63,7 +63,7 @@ class Fb2Input : InputPlugin {
         
         var sectionIndex = 0
         for (i in 0 until bodyNodes.length) {
-            val body = bodyNodes.item(i) as? Element
+            val body = bodyNodes.item(i) as? Element ?: continue
             val bodyName = body.getAttribute("name").takeIf { it.isNotEmpty() } ?: "body"
             
             // Process sections within body
@@ -85,7 +85,7 @@ class Fb2Input : InputPlugin {
             } else {
                 // Process each section
                 for (j in 0 until sections.length) {
-                    val section = sections.item(j) as? Element
+                    val section = sections.item(j) as? Element ?: continue
                     val html = convertFb2ElementToHtml(section)
                     val htmlFile = File(sectionsDir, "section_${sectionIndex++}.xhtml")
                     htmlFile.writeText(html)
@@ -108,7 +108,7 @@ class Fb2Input : InputPlugin {
         imagesDir.mkdirs()
         
         for (i in 0 until binaryNodes.length) {
-            val binary = binaryNodes.item(i) as? Element
+            val binary = binaryNodes.item(i) as? Element ?: continue
             val id = binary.getAttribute("id")
             val contentType = binary.getAttribute("content-type")
             val content = binary.textContent

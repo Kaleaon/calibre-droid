@@ -278,7 +278,7 @@ class MobiOutput : OutputPlugin {
         buffer.putInt(title.size)
         
         // Language (0x6C-0x6F)
-        val languageCode = getLanguageCode(metadata.language)
+        val languageCode = getLanguageCode(metadata.languages.firstOrNull() ?: "und")
         buffer.putInt(languageCode)
         
         // Input/Output language (0x70-0x77)
@@ -329,16 +329,18 @@ class MobiOutput : OutputPlugin {
         }
         
         // Publisher
-        if (metadata.publisher.isNotEmpty()) {
-            val data = metadata.publisher.toByteArray(StandardCharsets.UTF_8)
+        val publisher = metadata.publisher?.trim().orEmpty()
+        if (publisher.isNotEmpty()) {
+            val data = publisher.toByteArray(StandardCharsets.UTF_8)
             records.add(createExthRecord(101, data))
             totalSize += 8 + data.size
             recordCount++
         }
         
         // Description
-        if (metadata.description.isNotEmpty()) {
-            val data = metadata.description.toByteArray(StandardCharsets.UTF_8)
+        val description = metadata.comments?.trim().orEmpty()
+        if (description.isNotEmpty()) {
+            val data = description.toByteArray(StandardCharsets.UTF_8)
             records.add(createExthRecord(103, data))
             totalSize += 8 + data.size
             recordCount++
@@ -354,7 +356,7 @@ class MobiOutput : OutputPlugin {
         }
         
         // Publication date
-        val dateStr = metadata.publicationDate ?: metadata.dateAdded?.toString() ?: ""
+        val dateStr = metadata.pubDate?.toString() ?: metadata.dateAdded?.toString() ?: ""
         if (dateStr.isNotEmpty()) {
             val data = dateStr.toByteArray(StandardCharsets.UTF_8)
             records.add(createExthRecord(106, data))
@@ -462,7 +464,7 @@ class MobiOutput : OutputPlugin {
             raf.writeInt(0)
             
             // Number of records
-            raf.writeShort(records.size.toShort())
+            raf.writeShort(records.size)
             
             // Record list: offset and attributes for each record
             var currentOffset = raf.filePointer.toInt() + (8 * records.size) + 2
@@ -470,7 +472,7 @@ class MobiOutput : OutputPlugin {
                 raf.writeInt(currentOffset)
                 raf.writeByte(0) // Attributes
                 raf.writeByte(0) // Unused
-                raf.writeShort((i * 2).toShort()) // Unique ID
+                raf.writeShort(i * 2) // Unique ID
                 currentOffset += records[i].size
             }
             

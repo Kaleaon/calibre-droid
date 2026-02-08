@@ -1,10 +1,13 @@
 package org.calibre.android
 
 import android.os.Bundle
+import android.os.SystemClock
+import android.content.pm.ApplicationInfo
 import android.view.Menu
 import android.view.MenuItem
 import android.webkit.JavascriptInterface
 import android.webkit.WebView
+import android.webkit.WebSettings
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import org.calibre.android.databinding.ActivityReaderBinding
@@ -13,11 +16,18 @@ import java.io.File
 
 class ReaderActivity : AppCompatActivity() {
 
+    private companion object {
+        private const val PROGRESS_WRITE_THROTTLE_MS = 1500L
+        private const val PROGRESS_WRITE_THROTTLE_NO_CHANGE_MS = 2000L
+    }
+
     private lateinit var binding: ActivityReaderBinding
     private var bookId: Int = -1
-    private lateinit var library: org.calibre.metadata.Library
+    private lateinit var library: AndroidLibrary
     private var startTime: Long = 0
     private var settings: org.calibre.metadata.ReadingSettings = org.calibre.metadata.ReadingSettings()
+    private var lastProgressWriteAtMs: Long = 0
+    private var lastProgressPercent: Int = -1
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -35,18 +45,17 @@ class ReaderActivity : AppCompatActivity() {
             try {
                 // Check if we need conversion
                 if (bookFile.extension.lowercase() in setOf("epub", "mobi", "azw3")) {
-                    val cacheDir = File(cacheDir, "reader_cache")
-                    if (!cacheDir.exists()) cacheDir.mkdirs()
-                    
-                    val outputFile = File(cacheDir, "content.html")
-                    
+                    val readerCacheDir = File(cacheDir, "reader_cache")
+                    if (!readerCacheDir.exists()) readerCacheDir.mkdirs()
+
+                    val outputFile = File(readerCacheDir, "content_${bookId}.html")
                     val pipeline = ConversionPipeline()
                     try {
                         pipeline.convert(bookFile, "html", outputFile)
                         binding.webView.loadUrl("file://${outputFile.absolutePath}")
                     } catch (e: Exception) {
-                         val html = "<html><body><h1>Conversion Error</h1><p>${e.message}</p></body></html>"
-                         binding.webView.loadData(html, "text/html", "UTF-8")
+                        val html = "<html><body><h1>Conversion Error</h1><pre>${e.message}</pre></body></html>"
+                        binding.webView.loadData(html, "text/html", "UTF-8")
                     }
                 } else if (bookFile.extension.lowercase() == "html" || bookFile.extension.lowercase() == "txt") {
                     binding.webView.loadUrl("file://${bookFile.absolutePath}")
@@ -63,7 +72,22 @@ class ReaderActivity : AppCompatActivity() {
     }
     
     private fun setupWebView() {
-        binding.webView.settings.javaScriptEnabled = true
+        val webSettings: WebSettings = binding.webView.settings
+        webSettings.javaScriptEnabled = true
+        webSettings.domStorageEnabled = true
+        webSettings.loadsImagesAutomatically = true
+        webSettings.builtInZoomControls = true
+        webSettings.displayZoomControls = false
+        webSettings.useWideViewPort = true
+        webSettings.loadWithOverviewMode = true
+        webSettings.allowContentAccess = false
+        webSettings.allowFileAccess = true // required for file:// reader content
+        webSettings.allowFileAccessFromFileURLs = false
+        webSettings.allowUniversalAccessFromFileURLs = false
+        webSettings.cacheMode = WebSettings.LOAD_DEFAULT
+        val debuggable = (applicationInfo.flags and ApplicationInfo.FLAG_DEBUGGABLE) != 0
+        WebView.setWebContentsDebuggingEnabled(debuggable)
+
         binding.webView.addJavascriptInterface(ReaderInterface(), "AndroidReader")
         
         // Load settings from SharedPreferences
@@ -192,15 +216,7 @@ class ReaderActivity : AppCompatActivity() {
         // Save reading time
         val readingTime = ((System.currentTimeMillis() - startTime) / 60000).toInt()
         if (readingTime > 0) {
-            val book = library.getMetadata(bookId)
-            if (book != null) {
-                book.readingProgress.readingTimeMinutes += readingTime
-                library.updateReadingProgress(
-                    bookId,
-                    book.readingProgress.currentPage,
-                    book.readingProgress.totalPages
-                )
-            }
+            library.addReadingTimeMinutes(bookId, readingTime)
         }
     }
     
@@ -208,12 +224,19 @@ class ReaderActivity : AppCompatActivity() {
         @JavascriptInterface
         fun updateProgress(percent: Int, totalHeight: Int) {
             runOnUiThread {
+                val now = SystemClock.elapsedRealtime()
+                // Throttle writes to avoid saving on every scroll event
+                if (percent == lastProgressPercent && now - lastProgressWriteAtMs < PROGRESS_WRITE_THROTTLE_NO_CHANGE_MS) return@runOnUiThread
+                if (now - lastProgressWriteAtMs < PROGRESS_WRITE_THROTTLE_MS) return@runOnUiThread
+
                 val book = library.getMetadata(bookId)
                 if (book != null) {
                     // Estimate pages (rough calculation)
                     val estimatedPages = (totalHeight / 800).coerceAtLeast(1) // ~800px per page
                     val currentPage = ((percent / 100.0) * estimatedPages).toInt()
                     library.updateReadingProgress(bookId, currentPage, estimatedPages, "$percent%")
+                    lastProgressPercent = percent
+                    lastProgressWriteAtMs = now
                 }
             }
         }
