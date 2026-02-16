@@ -14,6 +14,7 @@ class BookDetailActivity : AppCompatActivity() {
     private var bookId: Int = -1
 
     override fun onCreate(savedInstanceState: Bundle?) {
+        KThemeEngine.applyTheme(this)
         super.onCreate(savedInstanceState)
         binding = ActivityBookDetailBinding.inflate(layoutInflater)
         setContentView(binding.root)

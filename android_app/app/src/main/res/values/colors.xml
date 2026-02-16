@@ -5,6 +5,23 @@
     <color name="purple_700">#FF3700B3</color>
     <color name="teal_200">#FF03DAC5</color>
     <color name="teal_700">#FF018786</color>
+
+    <color name="theme_classic_primary">#FF6200EE</color>
+    <color name="theme_classic_primary_variant">#FF3700B3</color>
+    <color name="theme_classic_secondary">#FF03DAC5</color>
+
+    <color name="theme_ocean_primary">#FF1565C0</color>
+    <color name="theme_ocean_primary_variant">#FF0D47A1</color>
+    <color name="theme_ocean_secondary">#FF00ACC1</color>
+
+    <color name="theme_sepia_primary">#FF8D6E63</color>
+    <color name="theme_sepia_primary_variant">#FF6D4C41</color>
+    <color name="theme_sepia_secondary">#FFBCAAA4</color>
+
+    <color name="theme_night_primary">#FF121212</color>
+    <color name="theme_night_primary_variant">#FF000000</color>
+    <color name="theme_night_secondary">#FF90CAF9</color>
+
     <color name="black">#FF000000</color>
     <color name="white">#FFFFFFFF</color>
 </resources>

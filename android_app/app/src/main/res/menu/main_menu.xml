@@ -4,17 +4,22 @@
     <item
         android:id="@+id/action_search"
         android:icon="@android:drawable/ic_menu_search"
-        android:title="Search"
+        android:title="@string/menu_search"
         app:actionViewClass="androidx.appcompat.widget.SearchView"
         app:showAsAction="ifRoom|collapseActionView" />
     <item
         android:id="@+id/action_statistics"
         android:icon="@android:drawable/ic_menu_info_details"
-        android:title="Statistics"
+        android:title="@string/menu_statistics"
         app:showAsAction="never" />
     <item
         android:id="@+id/action_recently_read"
         android:icon="@android:drawable/ic_menu_recent_history"
-        android:title="Recently Read"
+        android:title="@string/menu_recently_read"
+        app:showAsAction="never" />
+    <item
+        android:id="@+id/action_theme"
+        android:icon="@android:drawable/ic_menu_manage"
+        android:title="@string/menu_theme"
         app:showAsAction="never" />
 </menu>
