@@ -35,3 +35,4 @@ The APK will be located in `app/build/outputs/apk/debug/app-debug.apk`.
 - **Responsive UI**: Adapts to phones (single pane) and tablets (split pane master-detail flow).
 - **Library Management**: Add, list, and view books (persisted to internal storage).
 - **Metadata**: Uses the same robust metadata model as the desktop Kotlin port.
+- **Theming (KTheme-inspired)**: App-wide theme presets with persistence (Classic, Ocean, Sepia, Night Reader).

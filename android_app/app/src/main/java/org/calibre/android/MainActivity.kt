@@ -1,8 +1,12 @@
 package org.calibre.android
 
 import android.content.Intent
+import android.graphics.Bitmap
+import android.graphics.BitmapFactory
 import android.net.Uri
 import android.os.Bundle
+import android.os.Handler
+import android.os.Looper
 import android.view.LayoutInflater
 import android.view.Menu
 import android.view.MenuItem
@@ -20,6 +24,8 @@ import org.calibre.metadata.Library
 import org.calibre.metadata.Metadata
 import java.io.File
 import java.io.FileOutputStream
+import java.util.concurrent.ExecutorService
+import java.util.concurrent.Executors
 
 class MainActivity : AppCompatActivity() {
 
@@ -32,11 +38,13 @@ class MainActivity : AppCompatActivity() {
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
+        KThemeEngine.applyTheme(this)
         super.onCreate(savedInstanceState)
         binding = ActivityMainBinding.inflate(layoutInflater)
         setContentView(binding.root)
 
         library = (application as CalibreApplication).library
+        AppLogger.i("MainActivity", "Main screen created")
 
         setupRecyclerView()
         setupSearch()
@@ -81,6 +89,10 @@ class MainActivity : AppCompatActivity() {
                 showRecentlyRead()
                 true
             }
+            R.id.action_theme -> {
+                showThemePicker()
+                true
+            }
             else -> super.onOptionsItemSelected(item)
         }
     }
@@ -107,6 +119,26 @@ class MainActivity : AppCompatActivity() {
             .show()
     }
     
+    private fun showThemePicker() {
+        val options = KThemeEngine.themes
+        val labels = options.map { it.displayName }.toTypedArray()
+        val current = KThemeEngine.getSelectedTheme(this)
+        val currentIndex = options.indexOfFirst { it.id == current.id }.coerceAtLeast(0)
+
+        android.app.AlertDialog.Builder(this)
+            .setTitle(getString(R.string.menu_theme))
+            .setSingleChoiceItems(labels, currentIndex) { dialog, which ->
+                val chosen = options[which]
+                if (KThemeEngine.selectTheme(this, chosen.id)) {
+                    AppLogger.i("MainActivity", "Theme changed to ${chosen.id}")
+                    dialog.dismiss()
+                    recreate()
+                }
+            }
+            .setNegativeButton(android.R.string.cancel, null)
+            .show()
+    }
+
     private fun showRecentlyRead() {
         val recent = library.getRecentlyRead(10)
         if (recent.isNotEmpty()) {
@@ -153,25 +185,29 @@ class MainActivity : AppCompatActivity() {
                 // Get filename from URI
                 val fileName = getFileName(uri) ?: "imported_book"
                 val extension = fileName.substringAfterLast('.', "")
-                
+                AppLogger.i("MainActivity", "Import requested for file=$fileName extension=$extension")
+
                 // Create temp file in app's cache
                 val tempFile = File(cacheDir, "import_${System.currentTimeMillis()}.$extension")
                 FileOutputStream(tempFile).use { outputStream ->
                     inputStream.copyTo(outputStream)
                 }
-                
+
                 // Import using Library
                 val id = library.importBook(tempFile)
-                
+
                 // Clean up temp file
                 tempFile.delete()
-                
+
+                AppLogger.i("MainActivity", "Import completed with id=$id")
                 Toast.makeText(this, "Book imported: ID $id", Toast.LENGTH_SHORT).show()
                 refreshList()
             } ?: run {
+                AppLogger.w("MainActivity", "Import failed: content resolver returned null input stream")
                 Toast.makeText(this, "Error: Could not open file", Toast.LENGTH_SHORT).show()
             }
         } catch (e: Exception) {
+            AppLogger.e("MainActivity", "Import failed for uri=$uri", e)
             Toast.makeText(this, "Import failed: ${e.message}", Toast.LENGTH_LONG).show()
         }
     }
@@ -238,7 +274,9 @@ class MainActivity : AppCompatActivity() {
     ) : RecyclerView.Adapter<BookAdapter.BookViewHolder>() {
         
         // Lazy loading: only load covers for visible items
-        private val coverCache = mutableMapOf<Int, android.graphics.Bitmap?>()
+        private val coverCache = mutableMapOf<Int, Bitmap?>()
+        private val coverExecutor: ExecutorService = Executors.newFixedThreadPool(2)
+        private val mainHandler = Handler(Looper.getMainLooper())
 
         fun updateData(newBooks: List<Metadata>) {
             books = newBooks
@@ -256,6 +294,11 @@ class MainActivity : AppCompatActivity() {
             val book = books[position]
             holder.bind(book, library, this)
             holder.itemView.setOnClickListener { onItemClick(book) }
+        }
+
+        override fun onDetachedFromRecyclerView(recyclerView: RecyclerView) {
+            super.onDetachedFromRecyclerView(recyclerView)
+            coverExecutor.shutdownNow()
         }
 
         override fun getItemCount() = books.size
@@ -279,10 +322,14 @@ class MainActivity : AppCompatActivity() {
                 coverView?.let { imageView ->
                     val bookId = book.id ?: 0
                     
-                    // Check cache first
-                    val cached = adapter.coverCache[bookId]
-                    if (cached != null) {
-                        imageView.setImageBitmap(cached)
+                    // Check cache first (including null cache entries)
+                    if (adapter.coverCache.containsKey(bookId)) {
+                        val cached = adapter.coverCache[bookId]
+                        if (cached != null) {
+                            imageView.setImageBitmap(cached)
+                        } else {
+                            imageView.setImageResource(android.R.drawable.ic_menu_gallery)
+                        }
                     } else {
                         // Load placeholder first
                         imageView.setImageResource(android.R.drawable.ic_menu_gallery)
@@ -299,24 +346,35 @@ class MainActivity : AppCompatActivity() {
                 imageView: ImageView,
                 adapter: BookAdapter
             ) {
-                // In a real app, use coroutines or background thread
-                // For now, load on current thread (could cause jank with many books)
-                try {
-                    val bookFile = library.getBookFile(bookId)
-                    if (bookFile != null && bookFile.extension.equals("epub", ignoreCase = true)) {
-                        val coverBytes = org.calibre.metadata.CoverExtractor.extractCoverFromEpub(bookFile)
-                        if (coverBytes != null) {
-                            val bitmap = android.graphics.BitmapFactory.decodeByteArray(coverBytes, 0, coverBytes.size)
-                            // Cache the bitmap
-                            adapter.coverCache[bookId] = bitmap
-                            imageView.setImageBitmap(bitmap)
-                            return
+                imageView.tag = bookId
+                adapter.coverExecutor.execute {
+                    val bitmap = try {
+                        val bookFile = library.getBookFile(bookId)
+                        if (bookFile != null && bookFile.extension.equals("epub", ignoreCase = true)) {
+                            val coverBytes = org.calibre.metadata.CoverExtractor.extractCoverFromEpub(bookFile)
+                            if (coverBytes != null) {
+                                BitmapFactory.decodeByteArray(coverBytes, 0, coverBytes.size)
+                            } else {
+                                null
+                            }
+                        } else {
+                            null
+                        }
+                    } catch (e: Exception) {
+                        null
+                    }
+
+                    adapter.coverCache[bookId] = bitmap
+                    adapter.mainHandler.post {
+                        if (imageView.tag == bookId) {
+                            if (bitmap != null) {
+                                imageView.setImageBitmap(bitmap)
+                            } else {
+                                imageView.setImageResource(android.R.drawable.ic_menu_gallery)
+                            }
                         }
                     }
-                } catch (e: Exception) {
-                    // Fall through to placeholder
                 }
-                adapter.coverCache[bookId] = null // Cache null to avoid retrying
             }
         }
     }

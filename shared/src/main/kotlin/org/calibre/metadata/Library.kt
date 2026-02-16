@@ -4,7 +4,6 @@ import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.databind.SerializationFeature
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
-import com.fasterxml.jackson.module.kotlin.readValue
 import org.calibre.search.FullTextSearch
 import org.calibre.utils.Logger
 import java.io.File
@@ -16,6 +15,16 @@ class Library(
     extraParsers: List<MetadataParser> = emptyList(),
     enableFts: Boolean = true
 ) {
+    companion object {
+        private const val STORAGE_SCHEMA_VERSION = 1
+    }
+
+    private data class LibrarySnapshot(
+        val schemaVersion: Int = STORAGE_SCHEMA_VERSION,
+        val exportedAt: java.time.LocalDateTime = java.time.LocalDateTime.now(),
+        val books: List<Metadata> = emptyList()
+    )
+
     private val books: MutableMap<Int, Metadata> = mutableMapOf()
     private val nextId = AtomicInteger(1)
     private val mapper: ObjectMapper = jacksonObjectMapper()
@@ -343,7 +352,7 @@ class Library(
     fun exportLibrary(destFile: File) {
         try {
             // Export metadata JSON
-            mapper.writeValue(destFile, books.values.toList())
+            mapper.writeValue(destFile, LibrarySnapshot(books = books.values.toList()))
             
             // Also create a manifest file listing all book files
             val manifestFile = File(destFile.parentFile, "${destFile.nameWithoutExtension}_manifest.txt")
@@ -357,7 +366,7 @@ class Library(
     
     fun importLibrary(sourceFile: File) {
         try {
-            val importedBooks: List<Metadata> = mapper.readValue(sourceFile)
+            val importedBooks = readBooksFromStorage(sourceFile)
             var imported = 0
             importedBooks.forEach { book ->
                 val id = book.id ?: nextId.getAndIncrement()
@@ -385,7 +394,16 @@ class Library(
 
     private fun save() {
         try {
-            mapper.writeValue(storageFile, books.values.toList())
+            val snapshot = LibrarySnapshot(books = books.values.toList())
+            val tempFile = File(storageFile.parentFile ?: File("."), "${storageFile.name}.tmp")
+            mapper.writeValue(tempFile, snapshot)
+
+            if (storageFile.exists()) {
+                val backupFile = File(storageFile.parentFile ?: File("."), "${storageFile.name}.bak")
+                storageFile.copyTo(backupFile, overwrite = true)
+            }
+            tempFile.copyTo(storageFile, overwrite = true)
+            tempFile.delete()
         } catch (e: Exception) {
             Logger.error("Error saving library: ${e.message}", e)
         }
@@ -394,7 +412,7 @@ class Library(
     private fun load() {
         if (storageFile.exists()) {
             try {
-                val loadedBooks: List<Metadata> = mapper.readValue(storageFile)
+                val loadedBooks = readBooksFromStorage(storageFile)
                 loadedBooks.forEach { book ->
                     val id = book.id ?: nextId.getAndIncrement()
                     if (id >= nextId.get()) {
@@ -405,6 +423,29 @@ class Library(
             } catch (e: Exception) {
                 Logger.error("Error loading library: ${e.message}", e)
             }
+        }
+    }
+
+    private fun readBooksFromStorage(file: File): List<Metadata> {
+        val root = mapper.readTree(file)
+        return when {
+            root.isArray -> {
+                Logger.warn("Detected legacy library format. Migrating to schema v$STORAGE_SCHEMA_VERSION")
+                mapper.convertValue(root, mapper.typeFactory.constructCollectionType(List::class.java, Metadata::class.java))
+            }
+            root.isObject -> {
+                val schemaVersion = root.get("schemaVersion")?.asInt(0) ?: 0
+                if (schemaVersion > STORAGE_SCHEMA_VERSION) {
+                    Logger.warn("Library schema version $schemaVersion is newer than supported $STORAGE_SCHEMA_VERSION")
+                }
+                val booksNode = root.get("books")
+                if (booksNode == null || !booksNode.isArray) {
+                    emptyList()
+                } else {
+                    mapper.convertValue(booksNode, mapper.typeFactory.constructCollectionType(List::class.java, Metadata::class.java))
+                }
+            }
+            else -> emptyList()
         }
     }
 }

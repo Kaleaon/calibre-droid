@@ -3,6 +3,9 @@
     <string name="app_name">Calibre Android</string>
     <string name="menu_search">Search</string>
     <string name="menu_add">Add Book</string>
+    <string name="menu_statistics">Statistics</string>
+    <string name="menu_recently_read">Recently Read</string>
+    <string name="menu_theme">App Theme</string>
     <string name="no_books">No books in library</string>
     <string name="title_activity_detail">Book Details</string>
 </resources>

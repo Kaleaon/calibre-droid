@@ -20,12 +20,14 @@ class ReaderActivity : AppCompatActivity() {
     private var settings: org.calibre.metadata.ReadingSettings = org.calibre.metadata.ReadingSettings()
 
     override fun onCreate(savedInstanceState: Bundle?) {
+        KThemeEngine.applyTheme(this)
         super.onCreate(savedInstanceState)
         binding = ActivityReaderBinding.inflate(layoutInflater)
         setContentView(binding.root)
 
         bookId = intent.getIntExtra("book_id", -1)
         library = (application as CalibreApplication).library
+        AppLogger.i("ReaderActivity", "Reader opened for bookId=$bookId")
         val bookFile = library.getBookFile(bookId)
 
         if (bookFile != null && bookFile.exists()) {
@@ -42,22 +44,29 @@ class ReaderActivity : AppCompatActivity() {
                     
                     val pipeline = ConversionPipeline()
                     try {
+                        AppLogger.d("ReaderActivity", "Converting ${bookFile.name} to HTML")
                         pipeline.convert(bookFile, "html", outputFile)
                         binding.webView.loadUrl("file://${outputFile.absolutePath}")
+                        AppLogger.d("ReaderActivity", "Loaded converted HTML for bookId=$bookId")
                     } catch (e: Exception) {
+                         AppLogger.e("ReaderActivity", "Conversion failed for ${bookFile.name}", e)
                          val html = "<html><body><h1>Conversion Error</h1><p>${e.message}</p></body></html>"
                          binding.webView.loadData(html, "text/html", "UTF-8")
                     }
                 } else if (bookFile.extension.lowercase() == "html" || bookFile.extension.lowercase() == "txt") {
+                    AppLogger.d("ReaderActivity", "Loading direct file ${bookFile.name}")
                     binding.webView.loadUrl("file://${bookFile.absolutePath}")
                 } else {
+                     AppLogger.w("ReaderActivity", "Unsupported format: ${bookFile.extension}")
                      val html = "<html><body><h1>Format Not Supported</h1><p>Cannot read ${bookFile.extension}</p></body></html>"
                      binding.webView.loadData(html, "text/html", "UTF-8")
                 }
             } catch (e: Exception) {
+                AppLogger.e("ReaderActivity", "Error opening book file for id=$bookId", e)
                 Toast.makeText(this, "Error opening book: ${e.message}", Toast.LENGTH_SHORT).show()
             }
         } else {
+            AppLogger.w("ReaderActivity", "Book file not found for id=$bookId")
             Toast.makeText(this, "Book file not found", Toast.LENGTH_SHORT).show()
         }
     }
