@@ -55,11 +55,9 @@ This status reflects verified code under `shared/`, `kotlin_app/`, and `android_
 - Simple logging utility with levels and optional file output
 - No log rotation or structured log export
 
-### Server
-- Basic HTTP content server (library browse + OPDS) in `kotlin_app`
-- OPDS 1.2 feed generation with pagination and metadata search
-- Authentication manager (in-memory users + sessions)
-- Standalone WebSocket server for library events (not wired into HTTP server)
+10. **PdfInput.kt** - PDF format input ✅
+    - ✅ Deleted: `pdf_input.py`
+    - Status: Implemented (basic conversion shell; full fidelity requires PDF parsing library integration)
 
 ### Media Library / Plex-like Server (Experimental)
 - `MediaLibrary` + `MediaServer` exist in `shared` as prototypes
@@ -73,39 +71,41 @@ This status reflects verified code under `shared/`, `kotlin_app/`, and `android_
 
 Original Python sources remain in `src/`; this repo is not “Python deleted after conversion.”
 
-## Next Steps (High Level)
+15. **LitInput.kt** - LIT format input ✅
+    - ✅ Deleted: `lit_input.py`
+    - Status: Implemented (parser present; may require parity enhancements)
 
-16. **LrfInput.kt** - LRF format input ⚠️
+16. **LrfInput.kt** - LRF format input ✅
     - ✅ Deleted: `lrf_input.py`
-    - Status: Placeholder - requires full LRF parser
+    - Status: Implemented (parser present; may require parity enhancements)
 
-17. **PdbInput.kt** - PDB format input ⚠️
+17. **PdbInput.kt** - PDB format input ✅
     - ✅ Deleted: `pdb_input.py`
-    - Status: Placeholder - requires full PDB parser
+    - Status: Implemented (parser present; encrypted eReader files are unsupported)
 
-18. **ChmInput.kt** - CHM format input ⚠️
+18. **ChmInput.kt** - CHM format input ✅
     - ✅ Deleted: `chm_input.py`
-    - Status: Placeholder - requires CHM/ITSS parser
+    - Status: Implemented (parser present; may require parity enhancements)
 
-19. **DjvuInput.kt** - DJVU format input ⚠️
+19. **DjvuInput.kt** - DJVU format input ✅
     - ✅ Deleted: `djvu_input.py`
-    - Status: Placeholder - requires DJVU parser library
+    - Status: Implemented (parser present; may require additional library integration)
 
 20. **Azw4Input.kt** - AZW4 format input ⚠️
     - ✅ Deleted: `azw4_input.py`
-    - Status: Placeholder - requires AZW4/Print Replica parser
+    - Status: Not implemented (placeholder throws `UnsupportedOperationException`) - requires AZW4/Print Replica parser
 
 21. **RbInput.kt** - RocketBook format input ⚠️
     - ✅ Deleted: `rb_input.py`
-    - Status: Placeholder - requires RocketBook parser
+    - Status: Not implemented (placeholder throws `UnsupportedOperationException`) - requires RocketBook parser
 
 22. **SnbInput.kt** - SNB format input ⚠️
     - ✅ Deleted: `snb_input.py`
-    - Status: Placeholder - requires SNB parser
+    - Status: Not implemented (placeholder throws `UnsupportedOperationException`) - requires SNB parser
 
 23. **RecipeInput.kt** - Recipe format input ⚠️
     - ✅ Deleted: `recipe_input.py`
-    - Status: Placeholder - handled by news fetching system
+    - Status: Not implemented (placeholder throws `UnsupportedOperationException`) - handled by news fetching system
 
 ### Output Plugins ✅ (All Python files deleted)
 
@@ -157,49 +157,40 @@ Original Python sources remain in `src/`; this repo is not “Python deleted aft
     - ✅ Deleted: `pml_output.py`
     - Features: HTML to PML conversion, PMLZ packaging
 
-13. **LitOutput.kt** - LIT format output ⚠️
+13. **LitOutput.kt** - LIT format output ✅
     - ✅ Deleted: `lit_output.py`
-    - Status: Placeholder - requires full LIT format implementation
+    - Status: Implemented (format generation present; may require parity enhancements)
 
-14. **LrfOutput.kt** - LRF format output ⚠️
+14. **LrfOutput.kt** - LRF format output ✅
     - ✅ Deleted: `lrf_output.py`
-    - Status: Placeholder - requires full LRF format implementation
+    - Status: Implemented (format generation present; may require parity enhancements)
 
-15. **PdbOutput.kt** - PDB format output ⚠️
+15. **PdbOutput.kt** - PDB format output ✅
     - ✅ Deleted: `pdb_output.py`
-    - Status: Placeholder - requires full PDB format implementation
+    - Status: Implemented (format generation present; may require parity enhancements)
 
 16. **RbOutput.kt** - RocketBook format output ⚠️
     - ✅ Deleted: `rb_output.py`
-    - Status: Placeholder - requires RocketBook format implementation
+    - Status: Not implemented (placeholder throws `UnsupportedOperationException`) - requires RocketBook format implementation
 
 17. **SnbOutput.kt** - SNB format output ⚠️
     - ✅ Deleted: `snb_output.py`
-    - Status: Placeholder - requires SNB format implementation
+    - Status: Not implemented (placeholder throws `UnsupportedOperationException`) - requires SNB format implementation
 
-### Placeholder Plugins (Complex/Legacy Formats)
+### Placeholder Plugins (Not Implemented)
 
 These plugins are registered but throw `UnsupportedOperationException` with helpful messages.
 They require specialized format parsers or are legacy formats:
 
 **Input Plugins:**
-- **LitInput.kt** - LIT format (Microsoft Reader) - Requires full LIT parser
-- **LrfInput.kt** - LRF format (Sony Reader) - Requires full LRF parser
-- **PdbInput.kt** - PDB format (Palm Database) - Requires full PDB parser
-- **ChmInput.kt** - CHM format (Compiled HTML Help) - Requires CHM/ITSS parser
-- **DjvuInput.kt** - DJVU format - Requires DJVU parser library
-- **Azw4Input.kt** - AZW4 format (Print Replica) - Requires AZW4 parser
-- **RbInput.kt** - RocketBook format - Requires RocketBook parser
-- **SnbInput.kt** - SNB format (Shanda Bambook) - Requires SNB parser
-- **RecipeInput.kt** - Recipe format - Handled by news fetching system
-- **PdfInput.kt** - PDF format - Requires PDF parsing library integration
+- **Azw4Input.kt** - AZW4 format (Print Replica) - Not implemented (throws `UnsupportedOperationException`)
+- **RbInput.kt** - RocketBook format - Not implemented (throws `UnsupportedOperationException`)
+- **SnbInput.kt** - SNB format (Shanda Bambook) - Not implemented (throws `UnsupportedOperationException`)
+- **RecipeInput.kt** - Recipe format - Not implemented (throws `UnsupportedOperationException`)
 
 **Output Plugins:**
-- **LitOutput.kt** - LIT format - Requires full LIT format implementation
-- **LrfOutput.kt** - LRF format - Requires full LRF format implementation
-- **PdbOutput.kt** - PDB format - Requires full PDB format implementation
-- **RbOutput.kt** - RocketBook format - Requires RocketBook format implementation
-- **SnbOutput.kt** - SNB format - Requires SNB format implementation
+- **RbOutput.kt** - RocketBook format - Not implemented (throws `UnsupportedOperationException`)
+- **SnbOutput.kt** - SNB format - Not implemented (throws `UnsupportedOperationException`)
 
 ## High-Priority Feature Entry Points (Validated)
 
@@ -254,8 +245,8 @@ Only the Kotlin implementations remain.
 - **Total Python Plugin Files**: 39
 - **Converted and Deleted**: 39 ✅
 - **Remaining**: 0 ✅
-- **Fully Implemented**: 25
-- **Placeholder Implementations**: 14 (complex/legacy formats requiring specialized libraries)
+- **Fully Implemented**: 33
+- **Placeholder Implementations**: 6 (formats throwing `UnsupportedOperationException`)
 - **Conversion Progress**: 100% complete ✅
 
 ## Next Steps
