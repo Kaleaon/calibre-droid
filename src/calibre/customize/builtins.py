@@ -590,54 +590,91 @@ plugins += [x for x in list(locals().values()) if isinstance(x, type) and
 # }}}
 
 # Conversion plugins {{{
-for _mod, _names in [
-    ('azw4_input', ['AZW4Input']),
-    ('chm_input', ['CHMInput']),
-    ('comic_input', ['ComicInput']),
-    ('djvu_input', ['DJVUInput']),
-    ('docx_input', ['DOCXInput']),
-    ('docx_output', ['DOCXOutput']),
-    ('epub_input', ['EPUBInput']),
-    ('epub_output', ['EPUBOutput', 'KEPUBOutput']),
-    ('fb2_input', ['FB2Input']),
-    ('fb2_output', ['FB2Output']),
-    ('html_input', ['HTMLInput']),
-    ('html_output', ['HTMLOutput']),
-    ('htmlz_input', ['HTMLZInput']),
-    ('htmlz_output', ['HTMLZOutput']),
-    ('lit_input', ['LITInput']),
-    ('lit_output', ['LITOutput']),
-    ('lrf_input', ['LRFInput']),
-    ('lrf_output', ['LRFOutput']),
-    ('mobi_input', ['MOBIInput']),
-    ('mobi_output', ['AZW3Output', 'MOBIOutput']),
-    ('odt_input', ['ODTInput']),
-    ('oeb_output', ['OEBOutput']),
-    ('pdb_input', ['PDBInput']),
-    ('pdb_output', ['PDBOutput']),
-    ('pdf_input', ['PDFInput']),
-    ('pdf_output', ['PDFOutput']),
-    ('pml_input', ['PMLInput']),
-    ('pml_output', ['PMLOutput']),
-    ('rb_input', ['RBInput']),
-    ('rb_output', ['RBOutput']),
-    ('recipe_input', ['RecipeInput']),
-    ('rtf_input', ['RTFInput']),
-    ('rtf_output', ['RTFOutput']),
-    ('snb_input', ['SNBInput']),
-    ('snb_output', ['SNBOutput']),
-    ('tcr_input', ['TCRInput']),
-    ('tcr_output', ['TCROutput']),
-    ('txt_input', ['TXTInput']),
-    ('txt_output', ['TXTOutput', 'TXTZOutput']),
-]:
-    try:
-        _m = __import__(f'calibre.ebooks.conversion.plugins.{_mod}', fromlist=_names)
-        for _n in _names:
-            if hasattr(_m, _n):
-                plugins.append(getattr(_m, _n))
-    except ImportError:
-        pass
+from calibre.ebooks.conversion.plugins.azw4_input import AZW4Input
+from calibre.ebooks.conversion.plugins.chm_input import CHMInput
+from calibre.ebooks.conversion.plugins.comic_input import ComicInput
+from calibre.ebooks.conversion.plugins.djvu_input import DJVUInput
+from calibre.ebooks.conversion.plugins.docx_input import DOCXInput
+from calibre.ebooks.conversion.plugins.docx_output import DOCXOutput
+from calibre.ebooks.conversion.plugins.epub_input import EPUBInput
+from calibre.ebooks.conversion.plugins.epub_output import EPUBOutput, KEPUBOutput
+from calibre.ebooks.conversion.plugins.fb2_input import FB2Input
+from calibre.ebooks.conversion.plugins.fb2_output import FB2Output
+from calibre.ebooks.conversion.plugins.html_input import HTMLInput
+from calibre.ebooks.conversion.plugins.html_output import HTMLOutput
+from calibre.ebooks.conversion.plugins.htmlz_input import HTMLZInput
+from calibre.ebooks.conversion.plugins.htmlz_output import HTMLZOutput
+from calibre.ebooks.conversion.plugins.lit_input import LITInput
+from calibre.ebooks.conversion.plugins.lit_output import LITOutput
+from calibre.ebooks.conversion.plugins.lrf_input import LRFInput
+from calibre.ebooks.conversion.plugins.lrf_output import LRFOutput
+from calibre.ebooks.conversion.plugins.mobi_input import MOBIInput
+from calibre.ebooks.conversion.plugins.mobi_output import AZW3Output, MOBIOutput
+from calibre.ebooks.conversion.plugins.odt_input import ODTInput
+from calibre.ebooks.conversion.plugins.oeb_output import OEBOutput
+from calibre.ebooks.conversion.plugins.pdb_input import PDBInput
+from calibre.ebooks.conversion.plugins.pdb_output import PDBOutput
+from calibre.ebooks.conversion.plugins.pdf_input import PDFInput
+from calibre.ebooks.conversion.plugins.pdf_output import PDFOutput
+from calibre.ebooks.conversion.plugins.pml_input import PMLInput
+from calibre.ebooks.conversion.plugins.pml_output import PMLOutput
+from calibre.ebooks.conversion.plugins.rb_input import RBInput
+from calibre.ebooks.conversion.plugins.rb_output import RBOutput
+from calibre.ebooks.conversion.plugins.recipe_input import RecipeInput
+from calibre.ebooks.conversion.plugins.rtf_input import RTFInput
+from calibre.ebooks.conversion.plugins.rtf_output import RTFOutput
+from calibre.ebooks.conversion.plugins.snb_input import SNBInput
+from calibre.ebooks.conversion.plugins.snb_output import SNBOutput
+from calibre.ebooks.conversion.plugins.tcr_input import TCRInput
+from calibre.ebooks.conversion.plugins.tcr_output import TCROutput
+from calibre.ebooks.conversion.plugins.txt_input import TXTInput
+from calibre.ebooks.conversion.plugins.txt_output import TXTOutput, TXTZOutput
+
+plugins += [
+    ComicInput,
+    DJVUInput,
+    EPUBInput,
+    FB2Input,
+    HTMLInput,
+    HTMLZInput,
+    LITInput,
+    MOBIInput,
+    ODTInput,
+    PDBInput,
+    AZW4Input,
+    PDFInput,
+    PMLInput,
+    RBInput,
+    RecipeInput,
+    RTFInput,
+    TCRInput,
+    TXTInput,
+    LRFInput,
+    CHMInput,
+    SNBInput,
+    DOCXInput,
+]
+plugins += [
+    EPUBOutput,
+    KEPUBOutput,
+    DOCXOutput,
+    FB2Output,
+    LITOutput,
+    LRFOutput,
+    MOBIOutput, AZW3Output,
+    OEBOutput,
+    PDBOutput,
+    PDFOutput,
+    PMLOutput,
+    RBOutput,
+    RTFOutput,
+    TCROutput,
+    TXTOutput,
+    TXTZOutput,
+    HTMLOutput,
+    HTMLZOutput,
+    SNBOutput,
+]
 # }}}
 
 # Catalog plugins {{{
