@@ -29,13 +29,13 @@
     -webkit-border-radius: 0.25em;
 }
 
-.button:hover a {
+.button:hover a, .button:focus-visible a {
     border-top: 1px solid #666;
     border-right: 1px solid #CCC;
-    border-bottom: 1 px solid #CCC;
-    border-left: 1 px solid #666;
-
-
+    border-bottom: 1px solid #CCC;
+    border-left: 1px solid #666;
+    outline: 2px solid #0056b3;
+    outline-offset: 2px;
 }
 
 div.navigation {
@@ -105,3 +105,9 @@ div.navigation {
     margin-top: 0.75ex;
     display: block;
 }
+
+:focus-visible {
+    outline: 2px solid var(--focus-ring-color, #2563eb);
+    outline-offset: 2px;
+}
+
