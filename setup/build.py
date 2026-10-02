@@ -537,10 +537,10 @@ class Build(Command):
                 cflags = ['/DCALIBRE_MODINIT_FUNC=PyMODINIT_FUNC']
             else:
                 return_type = 'PyObject*'
-                extern_decl = 'extern "C"' if ext.needs_cxx else ''
+                extern_decl = 'extern "C" ' if ext.needs_cxx else ''
                 cflags = [
                     '-DCALIBRE_MODINIT_FUNC='
-                    f'{extern_decl} __attribute__ ((visibility ("default"))) {return_type}']
+                    f'{extern_decl}__attribute__ ((visibility ("default"))) {return_type}']
             if ext.needs_cxx and ext.needs_cxx_std:
                 if env.cc_output_flag.startswith('/') and ext.needs_cxx == '11':
                     ext.needs_cxx = '14'
