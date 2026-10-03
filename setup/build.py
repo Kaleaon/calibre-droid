@@ -490,10 +490,12 @@ class Build(Command):
 
         jobs = []
         sbf_map = {}
+        sips_needed = set()
         for ext in pyqt_extensions:
             cmd, sbf, cwd = self.get_sip_commands(ext)
             sbf_map[id(ext)] = sbf
             if cmd is not None:
+                sips_needed.add(id(ext))
                 jobs.append(create_job(cmd, cwd=cwd))
         if jobs:
             self.info(f'SIPing {len(jobs)} files...')
@@ -501,11 +503,17 @@ class Build(Command):
                 raise SystemExit(1)
         for ext in pyqt_extensions:
             sbf = sbf_map[id(ext)]
-            if not os.path.exists(sbf):
+            if id(ext) in sips_needed or not os.path.exists(self.dest(ext, self.env)):
                 self.build_pyqt_extension(ext, sbf)
 
         if opts.only in {'all', 'headless'}:
             self.build_headless()
+
+        import importlib
+        importlib.invalidate_caches()
+        for k in list(sys.modules):
+            if k == 'calibre_extensions' or k.startswith('calibre_extensions.'):
+                sys.modules.pop(k, None)
 
     def dest(self, ext, env):
         return os.path.join(self.output_dir, getattr(ext, 'name', ext))+env.dest_ext
@@ -715,7 +723,13 @@ sip-file = {os.path.basename(sipf)!r}
         sbf = self.j(src_dir, self.b(sipf)+'.sbf')
         cmd = None
         cwd = None
-        if self.newer(sbf, [sipf] + ext.headers + ext.sources):
+        makefile = self.j(src_dir, 'build', 'Makefile')
+        need_sip = self.newer(sbf, [sipf] + ext.headers + ext.sources)
+        if not need_sip and os.path.exists(makefile):
+            with open(makefile, 'r', errors='ignore') as f:
+                if '/sw/sw/qt' in f.read() or not os.path.exists(QMAKE):
+                    need_sip = True
+        if need_sip:
             shutil.rmtree(src_dir, ignore_errors=True)
             os.makedirs(src_dir)
             self.create_sip_build_skeleton(src_dir, ext)

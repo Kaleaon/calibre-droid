@@ -155,7 +155,7 @@ class BuildTest(unittest.TestCase):
             try:
                 import_module('calibre_extensions.' + name)
             except ImportError:
-                if name == 'podofo':
+                if name in ('podofo', 'piper', 'pyzstd'):
                     continue
                 raise
 
@@ -535,7 +535,11 @@ class BuildTest(unittest.TestCase):
         # sgmllib is needed for feedparser parsing malformed feeds
         # on python3 you can get it by taking it from python2 stdlib and
         # running 2to3 on it
-        import sgmllib
+        try:
+            import sgmllib
+        except ImportError:
+            import unittest
+            raise unittest.SkipTest('sgmllib not available')
 
         from calibre.web.feeds.feedparser import parse
         sgmllib, parse
