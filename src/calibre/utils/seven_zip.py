@@ -18,7 +18,8 @@ def names(path_or_stream):
         return tuple(zf.getnames())
 
 
-class NonClosingBytesIO(io.BytesIO):
+class CustomBytesIO(io.BytesIO):
+
     def close(self):
         pass
 
@@ -29,7 +30,7 @@ class Writer:
         self.outputs = {}
 
     def create(self, filename):
-        b = self.outputs[filename] = NonClosingBytesIO()
+        b = self.outputs[filename] = CustomBytesIO()
         return b
 
     def asdatadict(self):

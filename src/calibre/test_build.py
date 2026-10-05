@@ -100,13 +100,10 @@ class BuildTest(unittest.TestCase):
         lzma.open
 
     def test_zstd(self):
-        try:
-            from pyzstd import compress, decompress
-            data = os.urandom(4096)
-            cdata = compress(data)
-            self.assertEqual(data, decompress(cdata))
-        except ImportError:
-            raise unittest.SkipTest('pyzstd module not installed')
+        from pyzstd import compress, decompress
+        data = os.urandom(4096)
+        cdata = compress(data)
+        self.assertEqual(data, decompress(cdata))
 
     def test_html5lib(self):
         import html5lib.html5parser  # noqa: F401
@@ -127,11 +124,8 @@ class BuildTest(unittest.TestCase):
         del SSIPClient
 
     def test_piper(self):
-        try:
-            from calibre.utils.tts.piper import simple_test
-            simple_test()
-        except Exception as e:
-            raise unittest.SkipTest(f'piper/espeak not functional: {e}')
+        from calibre.utils.tts.piper import simple_test
+        simple_test()
 
     def test_zeroconf(self):
         import ifaddr
@@ -152,12 +146,7 @@ class BuildTest(unittest.TestCase):
                     # Just check that the DLL can be loaded
                     ctypes.CDLL(os.path.join(plugins_loc, name + ('.dylib' if ismacos else '.so')))
                 continue
-            try:
-                import_module('calibre_extensions.' + name)
-            except ImportError:
-                if name in ('podofo', 'piper', 'pyzstd'):
-                    continue
-                raise
+            import_module('calibre_extensions.' + name)
 
     def test_lxml(self):
         from calibre.utils.cleantext import test_clean_xml_chars
@@ -509,11 +498,8 @@ class BuildTest(unittest.TestCase):
         psutil.Process(os.getpid())
 
     def test_podofo(self):
-        try:
-            from calibre.utils.podofo import test_podofo as dotest
-            dotest()
-        except Exception as e:
-            raise unittest.SkipTest(f'podofo not available: {e}')
+        from calibre.utils.podofo import test_podofo as dotest
+        dotest()
 
     @unittest.skipIf(iswindows, 'readline not available on windows')
     def test_terminal(self):
@@ -538,8 +524,7 @@ class BuildTest(unittest.TestCase):
         try:
             import sgmllib
         except ImportError:
-            import unittest
-            raise unittest.SkipTest('sgmllib not available')
+            import sgmllib3k as sgmllib
 
         from calibre.web.feeds.feedparser import parse
         sgmllib, parse

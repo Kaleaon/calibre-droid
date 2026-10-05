@@ -64,19 +64,37 @@
 
 ## Additional Format Support (Medium Priority)
 
-### 6. **FB2 (FictionBook) Support**
+### 6. **Placeholder Conversion Formats (Not Implemented)**
+- **Status**: Not Started
+- **Complexity**: Medium (varies by format)
+- **Impact**: Low-Medium (legacy/proprietary formats)
+- **What's Needed**:
+  - **AZW4 input**: PDF-based print replica parsing
+    - **Priority**: Medium
+    - **Dependencies**: PDF parsing library (PDFBox/iText) + AZW4 container parsing
+  - **RocketBook (RB) input/output**: Proprietary parser and writer
+    - **Priority**: Low
+    - **Dependencies**: RocketBook format specification, binary parser/serializer
+  - **SNB input/output**: Shanda Bambook parser and writer
+    - **Priority**: Low
+    - **Dependencies**: SNB format specification, compression/decompression routines
+  - **CBR input**: RAR archive extraction for comic pages
+    - **Priority**: Medium
+    - **Dependencies**: RAR extraction library (e.g., junrar or unrar bindings)
+
+### 7. **FB2 (FictionBook) Support**
 - **Status**: Not Started
 - **Complexity**: Medium
 - **Impact**: Low-Medium (popular in Russia/Eastern Europe)
 - **Files to Port**: `src/calibre/ebooks/fb2/`
 
-### 7. **HTMLZ Input/Output**
+### 8. **HTMLZ Input/Output**
 - **Status**: Not Started
 - **Complexity**: Low
 - **Impact**: Low
 - **What's Needed**: Zipped HTML handling
 
-### 8. **More Output Formats**
+### 9. **More Output Formats**
 - **Status**: Not Started
 - **Complexity**: Varies
 - **Impact**: Low-Medium
@@ -84,7 +102,7 @@
 
 ## The Editor (Phase 5)
 
-### 9. **Tweak Book Feature**
+### 10. **Tweak Book Feature**
 - **Status**: Not Started
 - **Complexity**: High
 - **Impact**: Medium - Popular Calibre feature
@@ -95,7 +113,7 @@
   - Repacking
   - Validation
 
-### 10. **Live Preview**
+### 11. **Live Preview**
 - **Status**: Not Started
 - **Complexity**: Medium
 - **Impact**: Low-Medium
@@ -103,7 +121,7 @@
 
 ## Server Enhancements (Medium Priority)
 
-### 11. **Authentication & User Management**
+### 12. **Authentication & User Management**
 - **Status**: Not Started
 - **Complexity**: Medium
 - **Impact**: Medium - Required for remote access
@@ -113,7 +131,7 @@
   - Permission system
 - **Files to Port**: `src/calibre/srv/users.py`, `src/calibre/srv/auth.py`
 
-### 12. **Enhanced OPDS**
+### 13. **Enhanced OPDS**
 - **Status**: Basic implementation
 - **Complexity**: Low-Medium
 - **Impact**: Low-Medium
@@ -123,7 +141,7 @@
   - Pagination
   - Categories/collections
 
-### 13. **WebSocket Support**
+### 14. **WebSocket Support**
 - **Status**: Not Started
 - **Complexity**: Medium
 - **Impact**: Low - For real-time updates
@@ -131,13 +149,13 @@
 
 ## Device Integration (Low-Medium Priority)
 
-### 14. **MTP Device Support**
+### 15. **MTP Device Support**
 - **Status**: Not Started
 - **Complexity**: High
 - **Impact**: Medium - Android device sync
 - **What's Needed**: MTP library integration
 
-### 15. **Better Device Detection**
+### 16. **Better Device Detection**
 - **Status**: Basic
 - **Complexity**: Medium
 - **Impact**: Low-Medium
@@ -145,7 +163,7 @@
 
 ## Production Readiness (High Priority)
 
-### 16. **Comprehensive Testing**
+### 17. **Comprehensive Testing**
 - **Status**: Basic tests only
 - **Complexity**: Medium
 - **Impact**: High
@@ -155,8 +173,8 @@
   - UI tests for Android
   - Performance tests
 
-### 17. **Logging System**
-- **Status**: Partial
+### 18. **Logging System**
+- **Status**: Not Started
 - **Complexity**: Low
 - **Impact**: High - Essential for debugging
 - **What's Needed**:
@@ -167,7 +185,7 @@
   - Consistent log destinations
   - **Current State**: Basic Logger exists with console/file output, but no rotation or wiring in app entry points.
 
-### 18. **Performance for Large Libraries**
+### 19. **Performance for Large Libraries**
 - **Status**: Basic lazy loading
 - **Complexity**: Medium
 - **Impact**: High
@@ -177,14 +195,14 @@
   - Virtual scrolling
   - Index optimization
 
-### 19. **I18n Expansion**
+### 20. **I18n Expansion**
 - **Status**: English/Spanish only
 - **Complexity**: Low
 - **Impact**: Medium
 - **What's Needed**: More language files (DE, FR, IT, etc.)
 
-### 20. **Packaging & Distribution**
-- **Status**: Partial
+### 21. **Packaging & Distribution**
+- **Status**: Not Started
 - **Complexity**: Medium
 - **Impact**: High - Required for distribution
 - **What's Needed**:
@@ -204,14 +222,16 @@
 
 ## Code Quality (Ongoing)
 
-### 5. Media Server (Experimental)
-- **Current**: `MediaLibrary` + `MediaServer` prototypes in `shared`.
-- **Missing**:
-  - Integration into CLI/desktop/Android apps
-  - Stable API/UX surface
-  - Production-grade streaming and auth
+### 22. **Code Cleanup**
+- Unused variables (many warnings)
+- Better error messages
+- Code documentation
+- API documentation
 
-## Medium Priority Gaps
+### 23. **Better Error Recovery**
+- Graceful degradation
+- Partial conversion support
+- Better validation
 
 ### 6. Format Fidelity Improvements
 - PDF input is a placeholder (needs PDF parsing integration).
