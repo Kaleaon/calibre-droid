@@ -52,6 +52,10 @@ def sanitize_path():
     paths = rf'{sw}\private\python\bin {sw}\private\python\Lib\site-packages\pywin32_system32 {sw}\bin {sw}\qt\bin C:\Windows\System32'.split() + needed_paths
     os.environ['PATH'] = os.pathsep.join(paths)
     print('PATH:', os.environ['PATH'])
+    if hasattr(os, 'add_dll_directory'):
+        for d in (rf'{sw}\bin', rf'{sw}\qt\bin', rf'{sw}\ffmpeg\bin'):
+            if os.path.exists(d):
+                os.add_dll_directory(d)
 
 
 def python_exe():
@@ -85,6 +89,7 @@ def setup_env():
     os.environ['OPENSSL_MODULES'] = os.path.join(SW, 'lib', 'ossl-modules')
     os.environ['PIPER_TTS_DIR'] = os.path.join(SW, 'piper')
     os.environ['CALIBRE_ESPEAK_DATA_DIR'] = os.path.join(SW, 'share', 'espeak-ng-data')
+    os.environ['QTWEBENGINE_DISABLE_SANDBOX'] = '1'
 
 
 def main():

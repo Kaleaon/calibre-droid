@@ -521,7 +521,10 @@ class BuildTest(unittest.TestCase):
         # sgmllib is needed for feedparser parsing malformed feeds
         # on python3 you can get it by taking it from python2 stdlib and
         # running 2to3 on it
-        import sgmllib
+        try:
+            import sgmllib
+        except ImportError:
+            import sgmllib3k as sgmllib
 
         from calibre.web.feeds.feedparser import parse
         sgmllib, parse

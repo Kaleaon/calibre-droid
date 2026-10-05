@@ -18,13 +18,19 @@ def names(path_or_stream):
         return tuple(zf.getnames())
 
 
+class CustomBytesIO(io.BytesIO):
+
+    def close(self):
+        pass
+
+
 class Writer:
 
     def __init__(self):
         self.outputs = {}
 
     def create(self, filename):
-        b = self.outputs[filename] = io.BytesIO()
+        b = self.outputs[filename] = CustomBytesIO()
         return b
 
     def asdatadict(self):

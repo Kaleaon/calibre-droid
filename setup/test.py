@@ -62,8 +62,10 @@ class Test(BaseTest):
                 sys.libexslt_dylib = ctypes.CDLL(os.path.join(SW, 'lib', 'libexslt.dylib'))
                 print(sys.libxml2_dylib, sys.libxslt_dylib, sys.libexslt_dylib, file=sys.stderr, flush=True)
             elif iswindows:
-                ffmpeg_dll_dir = os.path.join(SW, 'ffmpeg', 'bin')
-                os.add_dll_directory(ffmpeg_dll_dir)
+                for d in ('bin', os.path.join('qt', 'bin'), os.path.join('ffmpeg', 'bin')):
+                    dll_dir = os.path.join(SW, d)
+                    if os.path.exists(dll_dir) and hasattr(os, 'add_dll_directory'):
+                        os.add_dll_directory(dll_dir)
 
         from calibre.utils.run_tests import filter_tests_by_name, find_tests, remove_tests_by_name, run_cli
         tests = find_tests(which_tests=frozenset(opts.test_module), exclude_tests=frozenset(opts.exclude_test_module))
