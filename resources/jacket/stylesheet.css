@@ -78,6 +78,7 @@ table.cbj_header td.cbj_label {
 	font-family: sans-serif;
 	text-align: right;
 	width: 33%;
+	color: #595959;
 	}
 
 /*
@@ -135,6 +136,7 @@ hr {
 	font-size: 0.8em;
 	margin-top: 8px;
 	text-align: center;
+	color: #595959;
 	}
 
 .cbj_comments {

@@ -8,7 +8,7 @@ LIGHT_DARKER = '#b6b3a8'
 LIGHT_GRADIENT = 'linear-gradient(to bottom, {}, {})'.format(LIGHT, LIGHT_DARKER)
 DT_DARK = '#2d2d2d'
 DT_DARK_DARKER = 'black'
-DT_DARK_LIGHTER = '#777'
+DT_DARK_LIGHTER = '#595959'
 DT_DARK_LIGTHER_CONTRAST = '#1d1d1d'
 DT_LIGHT = '#ddd'
 DARK_GRADIENT = 'linear-gradient(to bottom, {}, {})'.format(DT_DARK_LIGHTER, DT_DARK)
@@ -25,7 +25,7 @@ DEFAULT_COLORS = {
     'window-error-foreground': c('red', '#C40233'),
     'window-hover-foreground': c('red', '#C40233'),
     'link-foreground': c('blue', '#6cb4ee'),
-    'faded-text': c('#666', '#7f7f7f'),
+    'faded-text': c('#595959', '#a0a0a0'),
 
     # Top bar specific colors
     'bar-background': c(DARK, DT_DARK_LIGHTER),
