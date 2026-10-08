@@ -354,14 +354,14 @@ hr {
   margin: 2em auto;
   width: 50%;
   border: none;
-  border-top: 1px solid #999;
+  border-top: 1px solid #595959;
 }
 a { color: #0066cc; }
 code { font-family: monospace; background: #f4f4f4; padding: 0.2em 0.4em; }
 pre { background: #f4f4f4; padding: 1em; overflow-x: auto; }
 .chapter-title { text-align: center; margin-bottom: 2em; }
-.author { text-align: center; font-style: italic; color: #666; }
-.source { text-align: center; font-size: 0.9em; color: #999; margin-top: 2em; }"""
+.author { text-align: center; font-style: italic; color: #595959; }
+.source { text-align: center; font-size: 0.9em; color: #595959; margin-top: 2em; }"""
     }
     
     private fun generateTitlePage(content: WebContent): String {

@@ -1016,7 +1016,7 @@ class MediaServer(
         .stats { display: flex; justify-content: center; gap: 30px; margin: 30px 0; flex-wrap: wrap; }
         .stat { text-align: center; padding: 20px 30px; background: #1a1a2e; border-radius: 12px; }
         .stat .number { font-size: 2rem; font-weight: bold; color: #6366f1; display: block; }
-        .stat .label { color: #888; font-size: 0.9rem; }
+        .stat .label { color: #aaa; font-size: 0.9rem; }
         .section { margin: 40px 0; }
         .section h2 { margin-bottom: 20px; color: #ccc; }
         .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 20px; }
@@ -1027,7 +1027,7 @@ class MediaServer(
         .card-info { padding: 12px; }
         .card-title { font-size: 0.9rem; font-weight: 500; white-space: nowrap; 
                       overflow: hidden; text-overflow: ellipsis; }
-        .card-type { font-size: 0.75rem; color: #888; margin-top: 4px; }
+        .card-type { font-size: 0.75rem; color: #aaa; margin-top: 4px; }
         .links { display: flex; gap: 15px; flex-wrap: wrap; }
         .links a { padding: 12px 24px; background: #1a1a2e; border-radius: 8px;
                    color: #fff; text-decoration: none; transition: background 0.2s; }
