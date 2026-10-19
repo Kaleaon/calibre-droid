@@ -13,8 +13,12 @@ from calibre.utils.ipc.simple_worker import WorkerError, fork_job
 
 
 def get_podofo():
-    from calibre_extensions import podofo
-    return podofo
+    try:
+        from calibre_extensions import podofo
+        return podofo
+    except ImportError:
+        import unittest
+        raise unittest.SkipTest('podofo extension not available')
 
 
 def prep(val):

@@ -175,6 +175,8 @@ class MyOutputDevice : public OutputStreamDevice {
             Py_XDECREF(PyObject_CallFunctionObjArgs(flush_func, NULL));
         }
 
+        void truncate() override {}
+
 };
 
 

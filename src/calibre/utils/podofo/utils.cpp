@@ -26,7 +26,8 @@ pdf::podofo_set_exception(const PdfError &err) {
 
 PyObject *
 pdf::podofo_convert_pdfstring(const PdfString &s) {
-    return PyUnicode_FromString(s.GetString().c_str());
+    auto sv = s.GetString();
+    return PyUnicode_FromStringAndSize(sv.data(), sv.size());
 }
 
 const PdfString

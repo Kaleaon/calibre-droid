@@ -244,9 +244,38 @@ podofo_lib = os.environ.get('PODOFO_LIB_DIR', podofo_lib)
 podofo_inc = os.environ.get('PODOFO_INC_DIR', podofo_inc)
 podofo = os.environ.get('PODOFO_LIB_NAME', 'podofo')
 
-podofo_error = None if os.path.exists(os.path.join(podofo_inc, 'podofo.h')) else \
-        ('PoDoFo not found on your system. Various PDF related',
-    ' functionality will not work. Use the PODOFO_INC_DIR and',
-    ' PODOFO_LIB_DIR environment variables.')
+def _is_podofo_supported(inc_dir):
+    cfg_files = [
+        os.path.join(inc_dir, 'auxiliary', 'podofo_config.h'),
+        os.path.join(inc_dir, 'podofo_config.h'),
+        os.path.join(os.path.dirname(inc_dir), 'podofo', 'auxiliary', 'podofo_config.h'),
+        os.path.join(os.path.dirname(inc_dir), 'podofo', 'podofo_config.h'),
+    ]
+    for cfg in cfg_files:
+        if os.path.exists(cfg):
+            try:
+                with open(cfg, 'r') as f:
+                    content = f.read()
+                import re
+                major = re.search(r'#define\s+PODOFO_VERSION_MAJOR\s+(\d+)', content)
+                minor = re.search(r'#define\s+PODOFO_VERSION_MINOR\s+(\d+)', content)
+                if major and minor:
+                    maj_val, min_val = int(major.group(1)), int(minor.group(1))
+                    if maj_val > 0 or min_val >= 10:
+                        return False
+            except Exception:
+                pass
+    return True
+
+if 'SKIP_PODOFO' in os.environ:
+    podofo_error = 'Skipping PoDoFo'
+elif not os.path.exists(os.path.join(podofo_inc, 'podofo.h')):
+    podofo_error = ('PoDoFo not found on your system. Various PDF related',
+        ' functionality will not work. Use the PODOFO_INC_DIR and',
+        ' PODOFO_LIB_DIR environment variables.')
+elif not _is_podofo_supported(podofo_inc):
+    podofo_error = 'PoDoFo 0.10+ detected; skipping incompatible C++ extension'
+else:
+    podofo_error = None
 podofo_inc_dirs = [podofo_inc, os.path.dirname(podofo_inc)]
 podofo_lib_dirs = [podofo_lib]
