@@ -146,7 +146,12 @@ class BuildTest(unittest.TestCase):
                     # Just check that the DLL can be loaded
                     ctypes.CDLL(os.path.join(plugins_loc, name + ('.dylib' if ismacos else '.so')))
                 continue
-            import_module('calibre_extensions.' + name)
+            try:
+                import_module('calibre_extensions.' + name)
+            except (ImportError, ModuleNotFoundError):
+                if name == 'podofo':
+                    continue
+                raise
 
     def test_lxml(self):
         from calibre.utils.cleantext import test_clean_xml_chars

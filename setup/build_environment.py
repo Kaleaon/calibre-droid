@@ -244,9 +244,9 @@ podofo_lib = os.environ.get('PODOFO_LIB_DIR', podofo_lib)
 podofo_inc = os.environ.get('PODOFO_INC_DIR', podofo_inc)
 podofo = os.environ.get('PODOFO_LIB_NAME', 'podofo')
 
-podofo_error = None if os.path.exists(os.path.join(podofo_inc, 'podofo.h')) else \
+podofo_error = 'Skipping PoDoFo' if 'SKIP_PODOFO' in os.environ else (None if os.path.exists(os.path.join(podofo_inc, 'podofo.h')) else \
         ('PoDoFo not found on your system. Various PDF related',
     ' functionality will not work. Use the PODOFO_INC_DIR and',
-    ' PODOFO_LIB_DIR environment variables.')
+    ' PODOFO_LIB_DIR environment variables.'))
 podofo_inc_dirs = [podofo_inc, os.path.dirname(podofo_inc)]
 podofo_lib_dirs = [podofo_lib]

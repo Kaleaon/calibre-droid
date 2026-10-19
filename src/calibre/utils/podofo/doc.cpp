@@ -654,10 +654,10 @@ PDFDoc_alter_links(PDFDoc *self, PyObject *args) {
         for (auto &it : self->doc->GetObjects()) {
             PdfDictionary *link;
 			if(it->TryGetDictionary(link)) {
-				if (dictionary_has_key_name(*link, PdfName::KeyType, "Annot") && dictionary_has_key_name(*link, PdfName::KeySubtype, "Link")) {
+				if (dictionary_has_key_name(*link, "Type", "Annot") && dictionary_has_key_name(*link, "Subtype", "Link")) {
                     PdfObject *akey; PdfDictionary *A;
 					if ((akey = link->GetKey("A")) && akey->TryGetDictionary(A)) {
-						if (dictionary_has_key_name(*A, PdfName::KeyType, "Action") && dictionary_has_key_name(*A, "S", "URI")) {
+						if (dictionary_has_key_name(*A, "Type", "Action") && dictionary_has_key_name(*A, "S", "URI")) {
 							PdfObject *uo = A->GetKey("URI");
 							if (uo && uo->IsString()) {
                                 links.push_back(object_as_reference(it));
