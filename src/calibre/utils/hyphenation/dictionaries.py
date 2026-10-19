@@ -47,7 +47,7 @@ def dictionary_name_for_locale(loc):
     if loc == 'es':
         return lmap['es_es']
     if loc == 'fr':
-        return lmap['fr']
+        return lmap.get('fr') or lmap.get('fr_fr')
     q = loc + '_'
     for k, v in iteritems(lmap):
         if k.startswith(q):
