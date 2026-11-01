@@ -661,7 +661,25 @@ class Build(Command):
             self.check_call([self.env.make] + [f'-j{cpu_count or 1}'])
         finally:
             os.chdir(cwd)
-        os.rename(self.j(bdir, 'libheadless.so'), target)
+        found = None
+        for candidate in ('libheadless.dylib', 'libheadless.so', 'headless.dylib', 'headless.so'):
+            candidate_path = self.j(bdir, candidate)
+            if os.path.exists(candidate_path):
+                found = candidate_path
+                break
+        if not found:
+            raise FileNotFoundError(f'Could not find built headless library in {bdir}, found: {os.listdir(bdir)}')
+        os.rename(found, target)
+        if ismacos:
+            target_dylib = os.path.splitext(target)[0] + '.dylib'
+            if target != target_dylib:
+                shutil.copy2(target, target_dylib)
+            lib_target = os.path.join(os.path.dirname(target), 'lib' + os.path.basename(target))
+            if not os.path.exists(lib_target):
+                shutil.copy2(target, lib_target)
+            lib_dylib = os.path.splitext(lib_target)[0] + '.dylib'
+            if not os.path.exists(lib_dylib):
+                shutil.copy2(target, lib_dylib)
 
     def create_sip_build_skeleton(self, src_dir, ext):
         from setup.build_environment import pyqt_sip_abi_version
@@ -738,6 +756,8 @@ sip-file = {os.path.basename(sipf)!r}
             self.check_call([self.env.make] + ([] if iswindows else [f'-j{os.cpu_count() or 1}']), env=env)
             e = 'pyd' if iswindows else 'so'
             m = glob.glob(f'{ext.name}/{ext.name}.*{e}')
+            if not m and ismacos:
+                m = glob.glob(f'{ext.name}/{ext.name}.*dylib')
             if not m:
                 raise SystemExit(f'No built PyQt extension file in {os.path.join(os.getcwd(), ext.name)}')
             if len(m) != 1:

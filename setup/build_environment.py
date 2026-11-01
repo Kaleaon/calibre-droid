@@ -196,6 +196,8 @@ elif ismacos:
     freetype_inc_dirs = [sw + '/include/freetype2']
     uchardet_inc_dirs = [sw + '/include/uchardet']
     SSL = os.environ.get('OPENSSL_DIR', os.path.join(sw, 'private', 'ssl'))
+    if not os.path.exists(SSL):
+        SSL = sw
     openssl_inc_dirs = [os.path.join(SSL, 'include')]
     openssl_lib_dirs = [os.path.join(SSL, 'lib')]
     if os.path.exists(os.path.join(sw_bin_dir, 'cmake')):

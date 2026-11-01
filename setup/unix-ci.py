@@ -30,9 +30,11 @@ if ismacos:
     def install_env():
         setenv('SWBASE', SWBASE)
         setenv('SW', SW)
+        py_framework_dirs = glob.glob(f'{SW}/python/Python.framework/Versions/*/bin')
+        py_bin_dirs = ':'.join(py_framework_dirs) if py_framework_dirs else '$SW/python/Python.framework/Versions/3.14/bin'
         setenv(
             'PATH',
-            '$SW/bin:$SW/qt/bin:$SW/python/Python.framework/Versions/2.7/bin:$PWD/node_modules/.bin:$PATH'
+            f'$SW/bin:$SW/qt/bin:{py_bin_dirs}:$PWD/node_modules/.bin:$PATH'
         )
         setenv('CFLAGS', '-I$SW/include')
         setenv('LDFLAGS', '-L$SW/lib')
