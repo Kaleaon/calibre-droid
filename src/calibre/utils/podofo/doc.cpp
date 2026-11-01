@@ -191,7 +191,11 @@ PDFDoc_uncompress_pdf(PDFDoc *self, PyObject *args) {
                 try {
                     stream->Unwrap();
                 } catch (PdfError &e) {
+#if PODOFO_VERSION_MAJOR >= 1
                     if (e.GetCode() != PdfErrorCode::FlateError) throw e;
+#else
+                    if (e.GetCode() != PdfErrorCode::Flate) throw e;
+#endif
                 }
             } catch (PdfError &e) {
                 if (e.GetCode() != PdfErrorCode::UnsupportedFilter) throw e;
