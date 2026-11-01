@@ -18,15 +18,14 @@ pdf::podofo_set_exception(const PdfError &err) {
     std::stringstream stream;
     stream << msg << "\n";
     const PdErrorInfoStack &s = err.GetCallStack();
-    for (auto info : s) {
-        stream << "File: " << info.GetFilePath() << " Line: " << info.GetLine() << " " << info.GetInformation() << "\n";
-    }
+    for (auto info : s) { stream << "File: " << info.GetFilePath() << " Line: " << info.GetLine() << " " << info.GetInformation() << "\n"; }
     PyErr_SetString(Error, stream.str().c_str());
 }
 
 PyObject *
 pdf::podofo_convert_pdfstring(const PdfString &s) {
-    return PyUnicode_FromString(s.GetString().c_str());
+    const std::string_view val = s.GetString();
+    return PyUnicode_FromStringAndSize(val.data(), val.size());
 }
 
 const PdfString

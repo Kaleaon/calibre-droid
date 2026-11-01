@@ -100,7 +100,10 @@ class BuildTest(unittest.TestCase):
         lzma.open
 
     def test_zstd(self):
-        from pyzstd import compress, decompress
+        try:
+            from compression.zstd import compress, decompress
+        except ImportError:
+            from pyzstd import compress, decompress
         data = os.urandom(4096)
         cdata = compress(data)
         self.assertEqual(data, decompress(cdata))

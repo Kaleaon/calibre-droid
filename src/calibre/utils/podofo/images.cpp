@@ -21,69 +21,93 @@ class Image {
     bool is_valid;
     size_t content_hash, overall_hash;
 
-    Image( const Image & ) ;
-    Image & operator=( const Image & ) ;
+    Image(const Image &);
+    Image &operator=(const Image &);
 
-    public:
-        Image(const PdfReference &reference, const PdfObject *o, hash_cache_map &hash_cache) : buf(), width(0), height(0), ref(reference) {
-            const PdfObjectStream *stream = o->GetStream();
-            try {
-                buf = stream->GetCopySafe();
-                is_valid = true;
-            } catch(...) {
-                buf = charbuff();
-                is_valid = false;
-            }
-            const PdfDictionary &dict = o->GetDictionary();
-            if (dict.HasKey("Width") && dict.GetKey("Width")->IsNumber()) width = dict.GetKey("Width")->GetNumber();
-            if (dict.HasKey("Height") && dict.GetKey("Height")->IsNumber()) height = dict.GetKey("Height")->GetNumber();
-            if (dict.HasKey("SMask") && dict.GetKey("SMask")->IsReference()) smask = dict.GetKey("SMask")->GetReference();
-            std::hash<std::string> s;
-            auto it = hash_cache.find(reference);
-            if (it == hash_cache.end()) {
-                content_hash = s(buf);
-                hash_cache.insert(std::make_pair(reference, content_hash));
-            } else {
-                content_hash = it->second;
-            }
-            overall_hash = s(std::to_string(width) + " " + std::to_string(height) + " " + smask.ToString() + " " + std::to_string(content_hash));
+  public:
+    Image(const PdfReference &reference, const PdfObject *o, hash_cache_map &hash_cache) : buf(), width(0), height(0), ref(reference) {
+        const PdfObjectStream *stream = o->GetStream();
+        try {
+            buf = stream->GetCopySafe();
+            is_valid = true;
+        } catch (...) {
+            buf = charbuff();
+            is_valid = false;
         }
-        Image(Image &&other) noexcept :
-            buf(std::move(other.buf)), width(other.width), height(other.height), ref(other.ref), smask(other.smask), content_hash(other.content_hash), overall_hash(other.overall_hash) {
-            other.buf = charbuff(); is_valid = other.is_valid;
+        const PdfDictionary &dict = o->GetDictionary();
+        if (dict.HasKey("Width") && dict.GetKey("Width")->IsNumber()) width = dict.GetKey("Width")->GetNumber();
+        if (dict.HasKey("Height") && dict.GetKey("Height")->IsNumber()) height = dict.GetKey("Height")->GetNumber();
+        if (dict.HasKey("SMask") && dict.GetKey("SMask")->IsReference()) smask = dict.GetKey("SMask")->GetReference();
+        std::hash<std::string> s;
+        auto it = hash_cache.find(reference);
+        if (it == hash_cache.end()) {
+            content_hash = s(buf);
+            hash_cache.insert(std::make_pair(reference, content_hash));
+        } else {
+            content_hash = it->second;
         }
-        Image& operator=(Image &&other) noexcept {
-            buf = std::move(other.buf); other.buf = charbuff(); ref = other.ref;
-            width = other.width; height = other.height; is_valid = other.is_valid;
-            smask = other.smask; content_hash = other.content_hash; overall_hash = other.overall_hash;
-            return *this;
-        }
-        bool operator==(const Image &other) const noexcept {
-            return other.width == width && is_valid && other.is_valid && other.height == height && other.smask == smask && other.buf == buf;
-        }
-        std::size_t hash() const noexcept { return overall_hash; }
-        const PdfReference& reference() const noexcept { return ref; }
-        std::string ToString() const {
-            return "Image(ref=" + ref.ToString() + ", width="s + std::to_string(width) + ", height="s + std::to_string(height) + ", smask="s + smask.ToString() + ", digest=" + std::to_string(content_hash) + ")";
-        }
+        overall_hash = s(std::to_string(width) + " " + std::to_string(height) + " " + smask.ToString() + " " + std::to_string(content_hash));
+    }
+    Image(Image &&other) noexcept
+        : buf(std::move(other.buf)), width(other.width), height(other.height), ref(other.ref), smask(other.smask), content_hash(other.content_hash),
+          overall_hash(other.overall_hash) {
+        other.buf = charbuff();
+        is_valid = other.is_valid;
+    }
+    Image &
+    operator=(Image &&other) noexcept {
+        buf = std::move(other.buf);
+        other.buf = charbuff();
+        ref = other.ref;
+        width = other.width;
+        height = other.height;
+        is_valid = other.is_valid;
+        smask = other.smask;
+        content_hash = other.content_hash;
+        overall_hash = other.overall_hash;
+        return *this;
+    }
+    bool
+    operator==(const Image &other) const noexcept {
+        return other.width == width && is_valid && other.is_valid && other.height == height && other.smask == smask && other.buf == buf;
+    }
+    std::size_t
+    hash() const noexcept {
+        return overall_hash;
+    }
+    const PdfReference &
+    reference() const noexcept {
+        return ref;
+    }
+    std::string
+    ToString() const {
+        return "Image(ref=" + ref.ToString() + ", width="s + std::to_string(width) + ", height="s + std::to_string(height) + ", smask="s + smask.ToString() +
+               ", digest=" + std::to_string(content_hash) + ")";
+    }
 };
 
 struct ImageHasher {
-    std::size_t operator()(const Image& k) const { return k.hash(); }
+    std::size_t
+    operator()(const Image &k) const {
+        return k.hash();
+    }
 };
 
 typedef std::unordered_map<Image, std::vector<PdfReference>, ImageHasher> image_reference_map;
 
 static unsigned long
-run_one_dedup_pass(PDFDoc *self, hash_cache_map &hash_cache) {
+run_one_dedup_pass(PDFDoc *self, hash_cache_map &hash_cache, unordered_reference_set &removed) {
     unsigned long count = 0;
     PdfIndirectObjectList &objects = self->doc->GetObjects();
     image_reference_map image_map;
 
     for (auto &k : objects) {
         if (!k->IsDictionary()) continue;
+        // duplicates removed in a previous pass remain in memory until they
+        // are garbage collected on save, ignore them
+        if (removed.find(object_as_reference(k)) != removed.end()) continue;
         const PdfDictionary &dict = k->GetDictionary();
-        if (dictionary_has_key_name(dict, PdfName::KeyType, "XObject") && dictionary_has_key_name(dict, PdfName::KeySubtype, "Image")) {
+        if (dictionary_has_key_name(dict, "Type", "XObject") && dictionary_has_key_name(dict, "Subtype", "Image")) {
             Image img(object_as_reference(k), k, hash_cache);
             auto it = image_map.find(img);
             if (it == image_map.end()) {
@@ -98,8 +122,10 @@ run_one_dedup_pass(PDFDoc *self, hash_cache_map &hash_cache) {
             const PdfReference &canonical_ref = x.first.reference();
             for (auto &ref : x.second) {
                 if (ref != canonical_ref) {
+                    // rewriting the references below leaves the duplicate
+                    // unreferenced, so it is garbage collected on save
                     ref_map[ref] = canonical_ref;
-                    objects.RemoveObject(ref).reset();
+                    removed.insert(ref);
                     count++;
                 }
             }
@@ -122,11 +148,16 @@ run_one_dedup_pass(PDFDoc *self, hash_cache_map &hash_cache) {
                             const PdfReference &r = ref_map.at(object_as_reference(x.second));
                             new_xobject.AddKey(x.first, r);
                             changed = true;
-                        } catch (const std::out_of_range &err) { (void)err; continue; }
+                        } catch (const std::out_of_range &err) {
+                            (void)err;
+                            continue;
+                        }
                     }
                 }
                 if (changed) resources.AddKey("XObject", new_xobject);
-            } else if (dictionary_has_key_name(dict, PdfName::KeyType, "XObject") && dictionary_has_key_name(dict, PdfName::KeySubtype, "Image") && dict.HasKey("SMask") && dict.MustGetKey("SMask").IsReference()) {
+            } else if (
+                dictionary_has_key_name(dict, "Type", "XObject") && dictionary_has_key_name(dict, "Subtype", "Image") && dict.HasKey("SMask") &&
+                dict.MustGetKey("SMask").IsReference()) {
                 try {
                     const PdfReference &r = ref_map.at(dict.MustGetKey("SMask").GetReference());
                     dict.AddKey("SMask", r);
@@ -137,14 +168,14 @@ run_one_dedup_pass(PDFDoc *self, hash_cache_map &hash_cache) {
     return count;
 }
 
-static PyObject*
+static PyObject *
 dedup_images(PDFDoc *self, PyObject *args) {
     unsigned long count = 0;
     hash_cache_map hash_cache;
-    count += run_one_dedup_pass(self, hash_cache);
-    count += run_one_dedup_pass(self, hash_cache);
+    unordered_reference_set removed;
+    count += run_one_dedup_pass(self, hash_cache, removed);
+    count += run_one_dedup_pass(self, hash_cache, removed);
     return Py_BuildValue("k", count);
-
 }
 
 PYWRAP(dedup_images)
