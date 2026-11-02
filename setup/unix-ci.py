@@ -145,6 +145,14 @@ def main():
         download_and_decompress(
             f'https://download.calibre-ebook.com/ci/calibre7/{tball}.tar.xz', SW
         )
+        if ismacos:
+            for b in ('cmake', 'ninja'):
+                bp = os.path.join(SW, 'bin', b)
+                if os.path.exists(bp):
+                    try:
+                        os.remove(bp)
+                    except OSError:
+                        pass
         if not ismacos:
             install_linux_deps()
 
