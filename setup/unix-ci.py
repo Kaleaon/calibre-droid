@@ -28,6 +28,32 @@ if ismacos:
     SWBASE = '/Users/Shared/calibre-build/sw'
     SW = SWBASE + '/sw'
 
+    def patch_macos_headers():
+        # Fix Qt header bug on Apple Clang / arm64 where __has_builtin(__yield) evaluates to true
+        # but __yield() is undeclared without <arm_acle.h>, causing an implicit-function-declaration error.
+        # Excluding Clang causes Qt's qyieldcpu.h to fall through to __builtin_arm_yield() which works cleanly.
+        if not os.path.isdir(SW):
+            return
+        for root, _, files in os.walk(SW):
+            for f in files:
+                if f == 'qyieldcpu.h':
+                    p = os.path.join(root, f)
+                    try:
+                        real = os.path.realpath(p)
+                        os.chmod(real, 0o644)
+                        with open(real, 'r', encoding='utf-8', errors='replace') as fp:
+                            content = fp.read()
+                        if '#if __has_builtin(__yield)' in content and '!defined(__clang__)' not in content:
+                            print(f'Patching {real} for clang arm64 compatibility', flush=True)
+                            content = content.replace(
+                                '#if __has_builtin(__yield)',
+                                '#if __has_builtin(__yield) && !defined(__clang__)'
+                            )
+                            with open(real, 'w', encoding='utf-8') as fp:
+                                fp.write(content)
+                    except Exception as e:
+                        print(f'Note: failed to patch {p}: {e}', flush=True)
+
     def fix_macos_toolchain():
         # The prebuilt macos tarball provides universal libraries, but a few tool binaries
         # (cmake, ninja, node, etc.) are x86_64 only. On arm64 runners, replace or remove
@@ -57,11 +83,13 @@ if ismacos:
                         os.symlink(sys_bin, bp)
                     except OSError:
                         pass
+        patch_macos_headers()
 
     def install_env():
         setenv('SWBASE', SWBASE)
         setenv('SW', SW)
         fix_macos_toolchain()
+        patch_macos_headers()
         py_framework_dirs = (
             glob.glob(f'{SW}/python/Python.framework/Versions/*/bin') +
             glob.glob(f'{SW}/Python.framework/Versions/*/bin')
@@ -100,8 +128,8 @@ if ismacos:
             'PATH',
             f'$SW/bin:$SW/qt/bin:{py_bin_dirs}:$PWD/node_modules/.bin:$PATH'
         )
-        setenv('CFLAGS', '-I$SW/include')
-        setenv('CXXFLAGS', '-I$SW/include')
+        setenv('CFLAGS', '-I$SW/include -Wno-error=implicit-function-declaration')
+        setenv('CXXFLAGS', '-I$SW/include -Wno-error=implicit-function-declaration')
         setenv('LDFLAGS', '-L$SW/lib')
         setenv('QMAKE', '$SW/qt/bin/qmake')
         setenv('QTWEBENGINE_DISABLE_SANDBOX', '1')

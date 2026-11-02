@@ -305,7 +305,7 @@ def init_env(debug=False, sanitize=False, compiling_for='native'):
             ldflags.extend(['-arch', 'x86_64', '-arch', 'arm64'])
         cflags.append('-D_OSX')
         ldflags.extend('-bundle -undefined dynamic_lookup'.split())
-        cflags.extend(['-fno-common', '-dynamic'])
+        cflags.extend(['-fno-common', '-dynamic', '-Wno-error=implicit-function-declaration'])
         cflags.extend('-I' + x for x in get_python_include_paths())
 
     if iswindows or compiling_for == 'windows':
@@ -433,6 +433,28 @@ class Build(Command):
             if not os.path.exists('.build-cache/xwin/root'):
                 subprocess.check_call([sys.executable, 'setup.py', 'xwin'])
         self.env = init_env(debug=opts.debug)
+        if ismacos:
+            from setup.build_environment import sw
+            search_dirs = [x for x in (sw, getattr(self.env, 'sw', None), '/Users/Shared/calibre-build/sw/sw') if x and os.path.isdir(x)]
+            for sdir in search_dirs:
+                for root, _, files in os.walk(sdir):
+                    for f in files:
+                        if f == 'qyieldcpu.h':
+                            p = os.path.realpath(os.path.join(root, f))
+                            try:
+                                os.chmod(p, 0o644)
+                                with open(p, 'r', encoding='utf-8', errors='replace') as fp:
+                                    content = fp.read()
+                                if '#if __has_builtin(__yield)' in content and '!defined(__clang__)' not in content:
+                                    self.info(f'Patching {p} for clang arm64 compatibility')
+                                    content = content.replace(
+                                        '#if __has_builtin(__yield)',
+                                        '#if __has_builtin(__yield) && !defined(__clang__)'
+                                    )
+                                    with open(p, 'w', encoding='utf-8') as fp:
+                                        fp.write(content)
+                            except Exception as e:
+                                self.warn(f'Could not patch {p}: {e}')
         self.windows_cross_env = init_env(debug=opts.debug, compiling_for='windows')
         all_extensions = tuple(map(partial(parse_extension, compiling_for=self.compiling_for), read_extensions()))
         self.build_dir = os.path.abspath(opts.build_dir or self.DEFAULT_BUILDDIR)
@@ -697,6 +719,14 @@ class Build(Command):
             abi_version = f'abi-version = "{pyqt_sip_abi_version()}"'
         sipf = ext.sip_files[0]
         needs_exceptions = 'true' if ext.needs_exceptions else 'false'
+        qmake_cflags = list(self.env.base_cflags)
+        qmake_cxxflags = list(self.env.base_cxxflags)
+        if ismacos:
+            for flag in ('-Wno-error=implicit-function-declaration', '-Wno-implicit-function-declaration'):
+                if flag not in qmake_cflags:
+                    qmake_cflags.append(flag)
+                if flag not in qmake_cxxflags:
+                    qmake_cxxflags.append(flag)
         with open(os.path.join(src_dir, 'pyproject.toml'), 'w') as f:
             f.write(f'''
 [build-system]
@@ -718,8 +748,8 @@ qmake-settings = [
     """QMAKE_CC = {self.env.cc}""",
     """QMAKE_CXX = {self.env.cxx}""",
     """QMAKE_LINK = {self.env.linker or self.env.cxx}""",
-    """QMAKE_CFLAGS += {shlex.join(self.env.base_cflags)}""",
-    """QMAKE_CXXFLAGS += {shlex.join(self.env.base_cxxflags)}""",
+    """QMAKE_CFLAGS += {shlex.join(qmake_cflags)}""",
+    """QMAKE_CXXFLAGS += {shlex.join(qmake_cxxflags)}""",
     """QMAKE_LFLAGS += {shlex.join(self.env.base_ldflags)}""",
 ]
 
