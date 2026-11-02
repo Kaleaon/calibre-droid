@@ -23,14 +23,6 @@ jobs:
               with:
                 python-version: "3.10"
 
-            - name: Set up Rosetta 2 on macOS
-              if: runner.os == 'macOS'
-              run: |
-                if ! /usr/bin/arch -x86_64 /usr/bin/true 2>/dev/null; then
-                  echo "Installing Rosetta 2 for x86_64 CI toolchain..."
-                  sudo softwareupdate --install-rosetta --agree-to-license || true
-                fi
-
             - name: Install calibre dependencies
               run:
                   python setup/unix-ci.py install

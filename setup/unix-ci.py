@@ -6,6 +6,7 @@ import glob
 import io
 import os
 import shlex
+import shutil
 import subprocess
 import sys
 import tarfile
@@ -27,38 +28,40 @@ if ismacos:
     SWBASE = '/Users/Shared/calibre-build/sw'
     SW = SWBASE + '/sw'
 
-    def thin_to_x86_64(path):
-        if not os.path.isfile(path) or os.path.islink(path):
-            return
-        try:
-            with open(path, 'rb') as f:
-                magic = f.read(4)
-            if magic in (b'\xca\xfe\xba\xbe', b'\xbe\xba\xfe\xca'):
-                tmp = path + '.x86_64'
-                ret = subprocess.run(['lipo', '-thin', 'x86_64', path, '-output', tmp], capture_output=True)
-                if ret.returncode == 0:
-                    os.replace(tmp, path)
-                elif os.path.exists(tmp):
-                    os.remove(tmp)
-        except Exception:
-            pass
-
-    def thin_toolchain_executables():
-        bin_dirs = [
-            os.path.join(SW, 'bin'),
-            os.path.join(SW, 'qt', 'bin'),
-        ]
-        bin_dirs.extend(glob.glob(f'{SW}/python/Python.framework/Versions/*/bin'))
-        bin_dirs.extend(glob.glob(f'{SW}/Python.framework/Versions/*/bin'))
-        for bdir in bin_dirs:
-            if os.path.isdir(bdir):
-                for f in os.listdir(bdir):
-                    thin_to_x86_64(os.path.join(bdir, f))
+    def fix_macos_toolchain():
+        # The prebuilt macos tarball provides universal libraries, but a few tool binaries
+        # (cmake, ninja, node, etc.) are x86_64 only. On arm64 runners, replace or remove
+        # them so the runner's native arm64 tools are used.
+        import platform
+        is_arm = platform.machine() == 'arm64' or 'arm64' in platform.processor()
+        for b in ('cmake', 'ccmake', 'cpack', 'ctest', 'ninja', 'node', 'nasm', 'ndisasm'):
+            bp = os.path.join(SW, 'bin', b)
+            sys_bin = shutil.which(b)
+            if sys_bin and os.path.abspath(sys_bin).startswith(os.path.abspath(SW)):
+                sys_bin = None
+            if not sys_bin:
+                for cand in (f'/opt/homebrew/bin/{b}', f'/usr/local/bin/{b}', f'/usr/bin/{b}'):
+                    if os.path.isfile(cand) and os.access(cand, os.X_OK):
+                        sys_bin = cand
+                        break
+            if is_arm:
+                if os.path.lexists(bp):
+                    if os.path.islink(bp) and sys_bin and os.path.realpath(bp) == os.path.realpath(sys_bin):
+                        continue
+                    try:
+                        os.remove(bp)
+                    except OSError:
+                        pass
+                if sys_bin:
+                    try:
+                        os.symlink(sys_bin, bp)
+                    except OSError:
+                        pass
 
     def install_env():
         setenv('SWBASE', SWBASE)
         setenv('SW', SW)
-        thin_toolchain_executables()
+        fix_macos_toolchain()
         py_framework_dirs = (
             glob.glob(f'{SW}/python/Python.framework/Versions/*/bin') +
             glob.glob(f'{SW}/Python.framework/Versions/*/bin')
@@ -97,10 +100,9 @@ if ismacos:
             'PATH',
             f'$SW/bin:$SW/qt/bin:{py_bin_dirs}:$PWD/node_modules/.bin:$PATH'
         )
-        setenv('CFLAGS', '-I$SW/include -arch x86_64')
-        setenv('CXXFLAGS', '-I$SW/include -arch x86_64')
-        setenv('LDFLAGS', '-L$SW/lib -arch x86_64')
-        setenv('ARCHFLAGS', '-arch x86_64')
+        setenv('CFLAGS', '-I$SW/include')
+        setenv('CXXFLAGS', '-I$SW/include')
+        setenv('LDFLAGS', '-L$SW/lib')
         setenv('QMAKE', '$SW/qt/bin/qmake')
         setenv('QTWEBENGINE_DISABLE_SANDBOX', '1')
         setenv('QT_PLUGIN_PATH', '$SW/qt/plugins')
@@ -109,9 +111,6 @@ if ismacos:
             old += ':'
         setenv('DYLD_FALLBACK_LIBRARY_PATH', old + '$SW/lib')
         setenv('CALIBRE_ESPEAK_DATA_DIR', '$SW/share/espeak-ng-data')
-        xml2_libs = [os.path.join(SW, 'lib', x) for x in 'libxml2.dylib libxslt.dylib libexslt.dylib'.split()]
-        if all(os.path.exists(x) for x in xml2_libs):
-            setenv('DYLD_INSERT_LIBRARIES', ':'.join(xml2_libs))
 else:
 
     SWBASE = '/sw'
@@ -185,20 +184,7 @@ def run_python(*args):
                 break
     if len(args) == 1:
         args = shlex.split(args[0])
-    if ismacos:
-        is_fat = False
-        try:
-            with open(python, 'rb') as f:
-                if f.read(4) in (b'\xca\xfe\xba\xbe', b'\xbe\xba\xfe\xca'):
-                    is_fat = True
-        except Exception:
-            pass
-        if is_fat:
-            args = ['/usr/bin/arch', '-x86_64', python] + list(args)
-        else:
-            args = [python] + list(args)
-    else:
-        args = [python] + list(args)
+    args = [python] + list(args)
     return run(*args)
 
 
@@ -225,14 +211,6 @@ def main():
         return m['main']()
     action = sys.argv[1]
     if action == 'install':
-        if ismacos:
-            try:
-                ret = subprocess.run(['/usr/bin/arch', '-x86_64', '/usr/bin/true'], capture_output=True)
-                if ret.returncode != 0:
-                    print('Installing Rosetta 2 for x86_64 toolchain compatibility...', flush=True)
-                    subprocess.run(['sudo', 'softwareupdate', '--install-rosetta', '--agree-to-license'], check=False)
-            except Exception:
-                pass
         run('sudo', 'mkdir', '-p', SW)
         run('sudo', 'chown', '-R', os.environ['USER'], SWBASE)
 
@@ -241,7 +219,7 @@ def main():
             f'https://download.calibre-ebook.com/ci/calibre7/{tball}.tar.xz', SW
         )
         if ismacos:
-            thin_toolchain_executables()
+            fix_macos_toolchain()
         if not ismacos:
             install_linux_deps()
 

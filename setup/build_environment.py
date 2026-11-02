@@ -201,7 +201,11 @@ elif ismacos:
     openssl_inc_dirs = [os.path.join(SSL, 'include')]
     openssl_lib_dirs = [os.path.join(SSL, 'lib')]
     sw_cmake = os.path.join(sw_bin_dir, 'cmake')
-    CMAKE = os.environ.get('CMAKE') or (sw_cmake if os.path.exists(sw_cmake) else (shutil.which('cmake') or 'cmake'))
+    system_cmake = shutil.which('cmake')
+    if ismacos:
+        CMAKE = os.environ.get('CMAKE') or (system_cmake if system_cmake and not system_cmake.startswith(sw) else None) or (sw_cmake if os.path.exists(sw_cmake) else (system_cmake or 'cmake'))
+    else:
+        CMAKE = os.environ.get('CMAKE') or (sw_cmake if os.path.exists(sw_cmake) else (system_cmake or 'cmake'))
     piper_inc_dirs = [sw_inc_dir, os.path.join(sw_inc_dir, 'onnxruntime')]
     piper_lib_dirs = [sw_lib_dir]
     piper_libs = ['espeak-ng', 'onnxruntime']

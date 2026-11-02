@@ -303,19 +303,6 @@ def init_env(debug=False, sanitize=False, compiling_for='native'):
         if is_macos_universal_build:
             cflags.extend(['-arch', 'x86_64', '-arch', 'arm64'])
             ldflags.extend(['-arch', 'x86_64', '-arch', 'arm64'])
-        else:
-            arch = 'x86_64' if ('x86_64' in sysconfig.get_platform() or 'x86_64' in os.environ.get('ARCHFLAGS', '') or 'x86_64' in os.environ.get('CFLAGS', '')) else None
-            if arch:
-                if not any(x == '-arch' for x in base_cflags):
-                    base_cflags.extend(['-arch', arch])
-                if not any(x == '-arch' for x in base_cxxflags):
-                    base_cxxflags.extend(['-arch', arch])
-                if not any(x == '-arch' for x in base_ldflags):
-                    base_ldflags.extend(['-arch', arch])
-                if not any(x == '-arch' for x in cflags):
-                    cflags.extend(['-arch', arch])
-                if not any(x == '-arch' for x in ldflags):
-                    ldflags.extend(['-arch', arch])
         cflags.append('-D_OSX')
         ldflags.extend('-bundle -undefined dynamic_lookup'.split())
         cflags.extend(['-fno-common', '-dynamic'])
@@ -664,10 +651,6 @@ class Build(Command):
         cmd = [CMAKE]
         if is_macos_universal_build:
             cmd += ['-DCMAKE_OSX_ARCHITECTURES=x86_64;arm64']
-        elif ismacos:
-            arch = 'x86_64' if ('x86_64' in sysconfig.get_platform() or 'x86_64' in os.environ.get('ARCHFLAGS', '') or 'x86_64' in os.environ.get('CFLAGS', '')) else None
-            if arch:
-                cmd += [f'-DCMAKE_OSX_ARCHITECTURES={arch}']
         if sw and os.path.exists(os.path.join(sw, 'qt')):
             cmd += ['-DCMAKE_SYSTEM_PREFIX_PATH=' + os.path.join(sw, 'qt').replace(os.sep, '/')]
         os.makedirs(bdir)
@@ -776,10 +759,6 @@ sip-file = {os.path.basename(sipf)!r}
             env = os.environ.copy()
             if is_macos_universal_build:
                 env['ARCHS'] = 'x86_64 arm64'
-            elif ismacos:
-                arch = 'x86_64' if ('x86_64' in sysconfig.get_platform() or 'x86_64' in os.environ.get('ARCHFLAGS', '') or 'x86_64' in os.environ.get('CFLAGS', '')) else None
-                if arch:
-                    env['ARCHS'] = arch
             self.check_call([self.env.make] + ([] if iswindows else [f'-j{os.cpu_count() or 1}']), env=env)
             e = 'pyd' if iswindows else 'so'
             m = glob.glob(f'{ext.name}/{ext.name}.*{e}')
