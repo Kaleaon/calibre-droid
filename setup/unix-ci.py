@@ -32,6 +32,15 @@ if ismacos:
         setenv('SW', SW)
         py_framework_dirs = glob.glob(f'{SW}/python/Python.framework/Versions/*/bin')
         py_bin_dirs = ':'.join(py_framework_dirs) if py_framework_dirs else '$SW/python/Python.framework/Versions/3.14/bin'
+        for pydir in py_framework_dirs:
+            for name in ('python', 'python3'):
+                target = os.path.join(pydir, 'python3')
+                link = os.path.join(SW, 'bin', name)
+                if os.path.exists(target) and not os.path.exists(link):
+                    try:
+                        os.symlink(target, link)
+                    except OSError:
+                        pass
         setenv(
             'PATH',
             f'$SW/bin:$SW/qt/bin:{py_bin_dirs}:$PWD/node_modules/.bin:$PATH'
@@ -109,6 +118,11 @@ def install_qt_source_code():
 
 def run_python(*args):
     python = os.path.expandvars('$SW/bin/python')
+    if not os.path.exists(python):
+        for cand in glob.glob(os.path.expandvars('$SW/python/Python.framework/Versions/*/bin/python3')):
+            if os.path.exists(cand):
+                python = cand
+                break
     if len(args) == 1:
         args = shlex.split(args[0])
     args = [python] + list(args)
@@ -138,6 +152,14 @@ def main():
         return m['main']()
     action = sys.argv[1]
     if action == 'install':
+        if ismacos:
+            try:
+                ret = subprocess.run(['/usr/bin/arch', '-x86_64', '/usr/bin/true'], capture_output=True)
+                if ret.returncode != 0:
+                    print('Installing Rosetta 2 for x86_64 toolchain compatibility...', flush=True)
+                    subprocess.run(['sudo', 'softwareupdate', '--install-rosetta', '--agree-to-license'], check=False)
+            except Exception:
+                pass
         run('sudo', 'mkdir', '-p', SW)
         run('sudo', 'chown', '-R', os.environ['USER'], SWBASE)
 
@@ -145,14 +167,6 @@ def main():
         download_and_decompress(
             f'https://download.calibre-ebook.com/ci/calibre7/{tball}.tar.xz', SW
         )
-        if ismacos:
-            for b in ('cmake', 'ninja'):
-                bp = os.path.join(SW, 'bin', b)
-                if os.path.exists(bp):
-                    try:
-                        os.remove(bp)
-                    except OSError:
-                        pass
         if not ismacos:
             install_linux_deps()
 
