@@ -27,16 +27,68 @@ if ismacos:
     SWBASE = '/Users/Shared/calibre-build/sw'
     SW = SWBASE + '/sw'
 
+    def thin_to_x86_64(path):
+        if not os.path.isfile(path) or os.path.islink(path):
+            return
+        try:
+            with open(path, 'rb') as f:
+                magic = f.read(4)
+            if magic in (b'\xca\xfe\xba\xbe', b'\xbe\xba\xfe\xca'):
+                tmp = path + '.x86_64'
+                ret = subprocess.run(['lipo', '-thin', 'x86_64', path, '-output', tmp], capture_output=True)
+                if ret.returncode == 0:
+                    os.replace(tmp, path)
+                elif os.path.exists(tmp):
+                    os.remove(tmp)
+        except Exception:
+            pass
+
+    def thin_toolchain_executables():
+        bin_dirs = [
+            os.path.join(SW, 'bin'),
+            os.path.join(SW, 'qt', 'bin'),
+        ]
+        bin_dirs.extend(glob.glob(f'{SW}/python/Python.framework/Versions/*/bin'))
+        bin_dirs.extend(glob.glob(f'{SW}/Python.framework/Versions/*/bin'))
+        for bdir in bin_dirs:
+            if os.path.isdir(bdir):
+                for f in os.listdir(bdir):
+                    thin_to_x86_64(os.path.join(bdir, f))
+
     def install_env():
         setenv('SWBASE', SWBASE)
         setenv('SW', SW)
-        py_framework_dirs = glob.glob(f'{SW}/python/Python.framework/Versions/*/bin')
+        thin_toolchain_executables()
+        py_framework_dirs = (
+            glob.glob(f'{SW}/python/Python.framework/Versions/*/bin') +
+            glob.glob(f'{SW}/Python.framework/Versions/*/bin')
+        )
         py_bin_dirs = ':'.join(py_framework_dirs) if py_framework_dirs else '$SW/python/Python.framework/Versions/3.14/bin'
         for pydir in py_framework_dirs:
+            for name in os.listdir(pydir):
+                target = os.path.join(pydir, name)
+                link = os.path.join(SW, 'bin', name)
+                if os.path.lexists(link) and not os.path.exists(link):
+                    try:
+                        os.remove(link)
+                    except OSError:
+                        pass
+                if not os.path.lexists(link):
+                    try:
+                        os.symlink(target, link)
+                    except OSError:
+                        pass
             for name in ('python', 'python3'):
                 target = os.path.join(pydir, 'python3')
-                link = os.path.join(SW, 'bin', name)
-                if os.path.exists(target) and not os.path.exists(link):
+                if not os.path.exists(target):
+                    target = os.path.join(pydir, 'python')
+                if os.path.exists(target):
+                    link = os.path.join(SW, 'bin', name)
+                    if os.path.lexists(link):
+                        try:
+                            os.remove(link)
+                        except OSError:
+                            pass
                     try:
                         os.symlink(target, link)
                     except OSError:
@@ -45,8 +97,10 @@ if ismacos:
             'PATH',
             f'$SW/bin:$SW/qt/bin:{py_bin_dirs}:$PWD/node_modules/.bin:$PATH'
         )
-        setenv('CFLAGS', '-I$SW/include')
-        setenv('LDFLAGS', '-L$SW/lib')
+        setenv('CFLAGS', '-I$SW/include -arch x86_64')
+        setenv('CXXFLAGS', '-I$SW/include -arch x86_64')
+        setenv('LDFLAGS', '-L$SW/lib -arch x86_64')
+        setenv('ARCHFLAGS', '-arch x86_64')
         setenv('QMAKE', '$SW/qt/bin/qmake')
         setenv('QTWEBENGINE_DISABLE_SANDBOX', '1')
         setenv('QT_PLUGIN_PATH', '$SW/qt/plugins')
@@ -55,6 +109,9 @@ if ismacos:
             old += ':'
         setenv('DYLD_FALLBACK_LIBRARY_PATH', old + '$SW/lib')
         setenv('CALIBRE_ESPEAK_DATA_DIR', '$SW/share/espeak-ng-data')
+        xml2_libs = [os.path.join(SW, 'lib', x) for x in 'libxml2.dylib libxslt.dylib libexslt.dylib'.split()]
+        if all(os.path.exists(x) for x in xml2_libs):
+            setenv('DYLD_INSERT_LIBRARIES', ':'.join(xml2_libs))
 else:
 
     SWBASE = '/sw'
@@ -119,13 +176,29 @@ def install_qt_source_code():
 def run_python(*args):
     python = os.path.expandvars('$SW/bin/python')
     if not os.path.exists(python):
-        for cand in glob.glob(os.path.expandvars('$SW/python/Python.framework/Versions/*/bin/python3')):
+        for cand in (
+            glob.glob(os.path.expandvars('$SW/python/Python.framework/Versions/*/bin/python3')) +
+            glob.glob(os.path.expandvars('$SW/Python.framework/Versions/*/bin/python3'))
+        ):
             if os.path.exists(cand):
                 python = cand
                 break
     if len(args) == 1:
         args = shlex.split(args[0])
-    args = [python] + list(args)
+    if ismacos:
+        is_fat = False
+        try:
+            with open(python, 'rb') as f:
+                if f.read(4) in (b'\xca\xfe\xba\xbe', b'\xbe\xba\xfe\xca'):
+                    is_fat = True
+        except Exception:
+            pass
+        if is_fat:
+            args = ['/usr/bin/arch', '-x86_64', python] + list(args)
+        else:
+            args = [python] + list(args)
+    else:
+        args = [python] + list(args)
     return run(*args)
 
 
@@ -167,6 +240,8 @@ def main():
         download_and_decompress(
             f'https://download.calibre-ebook.com/ci/calibre7/{tball}.tar.xz', SW
         )
+        if ismacos:
+            thin_toolchain_executables()
         if not ismacos:
             install_linux_deps()
 

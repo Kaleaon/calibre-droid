@@ -303,6 +303,19 @@ def init_env(debug=False, sanitize=False, compiling_for='native'):
         if is_macos_universal_build:
             cflags.extend(['-arch', 'x86_64', '-arch', 'arm64'])
             ldflags.extend(['-arch', 'x86_64', '-arch', 'arm64'])
+        else:
+            arch = 'x86_64' if ('x86_64' in sysconfig.get_platform() or 'x86_64' in os.environ.get('ARCHFLAGS', '') or 'x86_64' in os.environ.get('CFLAGS', '')) else None
+            if arch:
+                if not any(x == '-arch' for x in base_cflags):
+                    base_cflags.extend(['-arch', arch])
+                if not any(x == '-arch' for x in base_cxxflags):
+                    base_cxxflags.extend(['-arch', arch])
+                if not any(x == '-arch' for x in base_ldflags):
+                    base_ldflags.extend(['-arch', arch])
+                if not any(x == '-arch' for x in cflags):
+                    cflags.extend(['-arch', arch])
+                if not any(x == '-arch' for x in ldflags):
+                    ldflags.extend(['-arch', arch])
         cflags.append('-D_OSX')
         ldflags.extend('-bundle -undefined dynamic_lookup'.split())
         cflags.extend(['-fno-common', '-dynamic'])
@@ -651,6 +664,10 @@ class Build(Command):
         cmd = [CMAKE]
         if is_macos_universal_build:
             cmd += ['-DCMAKE_OSX_ARCHITECTURES=x86_64;arm64']
+        elif ismacos:
+            arch = 'x86_64' if ('x86_64' in sysconfig.get_platform() or 'x86_64' in os.environ.get('ARCHFLAGS', '') or 'x86_64' in os.environ.get('CFLAGS', '')) else None
+            if arch:
+                cmd += [f'-DCMAKE_OSX_ARCHITECTURES={arch}']
         if sw and os.path.exists(os.path.join(sw, 'qt')):
             cmd += ['-DCMAKE_SYSTEM_PREFIX_PATH=' + os.path.join(sw, 'qt').replace(os.sep, '/')]
         os.makedirs(bdir)
@@ -662,10 +679,12 @@ class Build(Command):
         finally:
             os.chdir(cwd)
         found = None
-        for candidate in ('libheadless.dylib', 'libheadless.so', 'headless.dylib', 'headless.so'):
-            candidate_path = self.j(bdir, candidate)
-            if os.path.exists(candidate_path):
-                found = candidate_path
+        for root, dirs, files in os.walk(bdir):
+            for candidate in ('libheadless.dylib', 'libheadless.so', 'headless.dylib', 'headless.so'):
+                if candidate in files:
+                    found = os.path.join(root, candidate)
+                    break
+            if found:
                 break
         if not found:
             raise FileNotFoundError(f'Could not find built headless library in {bdir}, found: {os.listdir(bdir)}')
@@ -680,6 +699,10 @@ class Build(Command):
             lib_dylib = os.path.splitext(lib_target)[0] + '.dylib'
             if not os.path.exists(lib_dylib):
                 shutil.copy2(target, lib_dylib)
+            platforms_dir = os.path.join(os.path.dirname(target), 'platforms')
+            os.makedirs(platforms_dir, exist_ok=True)
+            for name in ('headless.dylib', 'libheadless.dylib'):
+                shutil.copy2(target, os.path.join(platforms_dir, name))
 
     def create_sip_build_skeleton(self, src_dir, ext):
         from setup.build_environment import pyqt_sip_abi_version
@@ -753,6 +776,10 @@ sip-file = {os.path.basename(sipf)!r}
             env = os.environ.copy()
             if is_macos_universal_build:
                 env['ARCHS'] = 'x86_64 arm64'
+            elif ismacos:
+                arch = 'x86_64' if ('x86_64' in sysconfig.get_platform() or 'x86_64' in os.environ.get('ARCHFLAGS', '') or 'x86_64' in os.environ.get('CFLAGS', '')) else None
+                if arch:
+                    env['ARCHS'] = arch
             self.check_call([self.env.make] + ([] if iswindows else [f'-j{os.cpu_count() or 1}']), env=env)
             e = 'pyd' if iswindows else 'so'
             m = glob.glob(f'{ext.name}/{ext.name}.*{e}')
