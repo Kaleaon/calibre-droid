@@ -658,7 +658,10 @@ class Build(Command):
         os.chdir(bdir)
         try:
             self.check_call(cmd + ['-S', os.path.dirname(sources[0])])
-            self.check_call([self.env.make] + [f'-j{cpu_count or 1}'])
+            try:
+                self.check_call([self.env.make] + [f'-j{cpu_count or 1}'])
+            except Exception:
+                self.check_call([CMAKE, '--build', '.', '--parallel', str(cpu_count or 1)])
         finally:
             os.chdir(cwd)
         found = None
@@ -763,11 +766,27 @@ sip-file = {os.path.basename(sipf)!r}
             e = 'pyd' if iswindows else 'so'
             m = glob.glob(f'{ext.name}/{ext.name}.*{e}')
             if not m and ismacos:
-                m = glob.glob(f'{ext.name}/{ext.name}.*dylib')
+                m = (
+                    glob.glob(f'{ext.name}/{ext.name}.*dylib') +
+                    glob.glob(f'{ext.name}/*.so') +
+                    glob.glob(f'{ext.name}/*.dylib') +
+                    glob.glob(f'{ext.name}/*.bundle')
+                )
+            if not m:
+                for root, _, files in os.walk('.'):
+                    for file in files:
+                        if (file.startswith(ext.name) or file.startswith('lib' + ext.name)) and (
+                            file.endswith(f'.{e}') or file.endswith('.dylib') or file.endswith('.bundle') or file.endswith('.so')
+                        ):
+                            m.append(os.path.join(root, file))
             if not m:
                 raise SystemExit(f'No built PyQt extension file in {os.path.join(os.getcwd(), ext.name)}')
-            if len(m) != 1:
-                raise SystemExit(f'Found extra PyQt extension files: {m}')
+            if len(m) > 1:
+                exact = [x for x in m if os.path.basename(x).startswith(f'{ext.name}.')]
+                if len(exact) == 1:
+                    m = exact
+                else:
+                    raise SystemExit(f'Found extra PyQt extension files: {m}')
             shutil.copy2(m[0], self.dest(ext, self.env))
             with open(sbf, 'w') as f:
                 f.write('done')

@@ -109,7 +109,9 @@ if ismacos:
         old = os.environ.get('DYLD_FALLBACK_LIBRARY_PATH', '')
         if old:
             old += ':'
-        setenv('DYLD_FALLBACK_LIBRARY_PATH', old + '$SW/lib')
+        setenv('DYLD_FALLBACK_LIBRARY_PATH', old + '$SW/lib:$SW/ffmpeg/lib:$SW/qt/lib')
+        setenv('DYLD_FRAMEWORK_PATH', '$SW/qt/lib')
+        setenv('PKG_CONFIG_PATH', '$SW/lib/pkgconfig')
         setenv('CALIBRE_ESPEAK_DATA_DIR', '$SW/share/espeak-ng-data')
 else:
 
@@ -132,7 +134,15 @@ def run(*args, timeout=600):
     if len(args) == 1:
         args = shlex.split(args[0])
     print(' '.join(args), flush=True)
-    p = subprocess.Popen(args)
+    p = subprocess.Popen(args, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True, errors='replace', bufsize=1)
+    recent_lines = []
+    for line in iter(p.stdout.readline, ''):
+        sys.stdout.write(line)
+        sys.stdout.flush()
+        recent_lines.append(line.rstrip())
+        if len(recent_lines) > 200:
+            recent_lines.pop(0)
+    p.stdout.close()
     try:
         ret = p.wait(timeout=timeout)
     except subprocess.TimeoutExpired as err:
@@ -142,6 +152,9 @@ def run(*args, timeout=600):
         p.kill()
 
     if ret != 0:
+        for l in recent_lines[-60:]:
+            if l:
+                print(f'::error::{l}', flush=True)
         raise SystemExit(ret)
 
 
