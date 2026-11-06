@@ -196,10 +196,16 @@ elif ismacos:
     freetype_inc_dirs = [sw + '/include/freetype2']
     uchardet_inc_dirs = [sw + '/include/uchardet']
     SSL = os.environ.get('OPENSSL_DIR', os.path.join(sw, 'private', 'ssl'))
+    if not os.path.exists(SSL):
+        SSL = sw
     openssl_inc_dirs = [os.path.join(SSL, 'include')]
     openssl_lib_dirs = [os.path.join(SSL, 'lib')]
-    if os.path.exists(os.path.join(sw_bin_dir, 'cmake')):
-        CMAKE = os.path.join(sw_bin_dir, 'cmake')
+    sw_cmake = os.path.join(sw_bin_dir, 'cmake')
+    system_cmake = shutil.which('cmake')
+    if ismacos:
+        CMAKE = os.environ.get('CMAKE') or (system_cmake if system_cmake and not system_cmake.startswith(sw) else None) or (sw_cmake if os.path.exists(sw_cmake) else (system_cmake or 'cmake'))
+    else:
+        CMAKE = os.environ.get('CMAKE') or (sw_cmake if os.path.exists(sw_cmake) else (system_cmake or 'cmake'))
     piper_inc_dirs = [sw_inc_dir, os.path.join(sw_inc_dir, 'onnxruntime')]
     piper_lib_dirs = [sw_lib_dir]
     piper_libs = ['espeak-ng', 'onnxruntime']
