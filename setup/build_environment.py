@@ -203,7 +203,9 @@ elif ismacos:
     sw_cmake = os.path.join(sw_bin_dir, 'cmake')
     system_cmake = shutil.which('cmake')
     if ismacos:
-        CMAKE = os.environ.get('CMAKE') or (system_cmake if system_cmake and not system_cmake.startswith(sw) else None) or (sw_cmake if os.path.exists(sw_cmake) else (system_cmake or 'cmake'))
+        system_cmake_non_sw = system_cmake if system_cmake and not system_cmake.startswith(sw) else None
+        fallback_cmake = sw_cmake if os.path.exists(sw_cmake) else (system_cmake or 'cmake')
+        CMAKE = os.environ.get('CMAKE') or system_cmake_non_sw or fallback_cmake
     else:
         CMAKE = os.environ.get('CMAKE') or (sw_cmake if os.path.exists(sw_cmake) else (system_cmake or 'cmake'))
     piper_inc_dirs = [sw_inc_dir, os.path.join(sw_inc_dir, 'onnxruntime')]
@@ -254,12 +256,5 @@ podofo_error = None if os.path.exists(os.path.join(podofo_inc, 'podofo.h')) else
         ('PoDoFo not found on your system. Various PDF related',
     ' functionality will not work. Use the PODOFO_INC_DIR and',
     ' PODOFO_LIB_DIR environment variables.')
-if podofo_error is None and os.path.exists(os.path.join(podofo_inc, 'auxiliary', 'podofo_config.h')):
-    try:
-        with open(os.path.join(podofo_inc, 'auxiliary', 'podofo_config.h'), 'r') as f:
-            if 'PODOFO_VERSION_MAJOR 1' in f.read():
-                podofo_error = ('PoDoFo 1.x is not supported by this extension.',)
-    except Exception:
-        pass
 podofo_inc_dirs = [podofo_inc, os.path.dirname(podofo_inc)]
 podofo_lib_dirs = [podofo_lib]
