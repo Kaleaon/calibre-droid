@@ -119,6 +119,7 @@ p.series {
 	margin-left:1.5em;
 	text-align:left;
 	text-indent:-1.25em;
+	color: #595959;
 	}
 
 /*
@@ -138,6 +139,7 @@ p.series_mobi {
     margin-left:0em;
 	text-align:left;
 	text-indent:-30px;
+	color: #595959;
 	}
 
 /*
@@ -253,7 +255,7 @@ hr.merged_comments_divider {
 	margin-left:10%;
 	border-top: solid white 0px;
 	border-right: solid white 0px;
-    border-bottom: dashed gray 2px;
+    border-bottom: dashed #595959 2px;
     border-left: solid white 0px;
 	}
 
@@ -278,6 +280,7 @@ p.formats {
 	margin-bottom:0.5em;
 	text-align: left;
 	text-indent: 0.0in;
+	color: #595959;
 	}
 
 /*
@@ -289,6 +292,7 @@ p.genres {
 	margin-bottom:0em;
 	text-align: left;
 	text-indent: 0.0in;
+	color: #595959;
 	}
 
 
@@ -307,6 +311,7 @@ p.series_id {
 td.publisher, td.date {
 	font-weight:bold;
 	text-align:center;
+	color: #595959;
 	}
 
 /*
@@ -322,13 +327,14 @@ td.rating{
 td.notes {
 	font-size: 100%;
 	text-align:center;
+	color: #595959;
 	}
 
 /*
 **   Thumbnail
 */
 td.thumbnail img {
-	-webkit-box-shadow: 4px 4px 12px #999;
+	-webkit-box-shadow: 4px 4px 12px #595959;
 	}
 
 /*

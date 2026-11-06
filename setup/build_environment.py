@@ -211,11 +211,11 @@ else:
     hunspell_inc_dirs = pkgconfig_include_dirs('hunspell', 'HUNSPELL_INC_DIR', '/usr/include/hunspell')
     hunspell_lib_dirs = pkgconfig_lib_dirs('hunspell', 'HUNSPELL_LIB_DIR', '/usr/lib')
     sw = os.environ.get('SW', os.path.expanduser('~/sw'))
-    podofo_inc = '/usr/include/podofo'
-    podofo_lib = '/usr/lib'
-    if not os.path.exists(podofo_inc + '/podofo.h'):
-        podofo_inc = os.path.join(sw, 'include', 'podofo')
-        podofo_lib = os.path.join(sw, 'lib')
+    podofo_inc = os.path.join(sw, 'include', 'podofo')
+    podofo_lib = os.path.join(sw, 'lib')
+    if not os.path.exists(os.path.join(podofo_inc, 'podofo.h')):
+        podofo_inc = '/usr/include/podofo'
+        podofo_lib = '/usr/lib'
     uchardet_inc_dirs = pkgconfig_include_dirs('uchardet', '', '/usr/include/uchardet')
     uchardet_lib_dirs = pkgconfig_lib_dirs('uchardet', '', '/usr/lib')
     uchardet_libs = pkgconfig_libs('uchardet', '', '')
@@ -256,6 +256,8 @@ def _is_podofo_supported(inc_dir):
             try:
                 with open(cfg, 'r') as f:
                     content = f.read()
+                if 'PODOFO_VERSION_MAJOR 1' in content:
+                    return False
                 import re
                 major = re.search(r'#define\s+PODOFO_VERSION_MAJOR\s+(\d+)', content)
                 minor = re.search(r'#define\s+PODOFO_VERSION_MINOR\s+(\d+)', content)
@@ -274,7 +276,7 @@ elif not os.path.exists(os.path.join(podofo_inc, 'podofo.h')):
         ' functionality will not work. Use the PODOFO_INC_DIR and',
         ' PODOFO_LIB_DIR environment variables.')
 elif not _is_podofo_supported(podofo_inc):
-    podofo_error = 'PoDoFo 0.10+ detected; skipping incompatible C++ extension'
+    podofo_error = 'PoDoFo 0.10+/1.x detected; skipping incompatible C++ extension'
 else:
     podofo_error = None
 podofo_inc_dirs = [podofo_inc, os.path.dirname(podofo_inc)]
