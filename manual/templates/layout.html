@@ -395,17 +395,55 @@ div.document, div.footer {
     width: auto; /* fix horizontal scrollbar if screen is less that 940px */
 }
 
+.skip-link {
+    position: absolute;
+    top: -9999px;
+    left: -9999px;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    z-index: 99999;
+}
+
+.skip-link:focus, .skip-link:focus-visible {
+    position: fixed;
+    top: 10px;
+    left: 10px;
+    width: auto;
+    height: auto;
+    padding: 10px 16px;
+    clip: auto;
+    overflow: visible;
+    white-space: normal;
+    background-color: #0b192c;
+    color: #ffffff;
+    font-size: 14px;
+    font-weight: bold;
+    text-decoration: underline;
+    border: 2px solid #38bdf8;
+    border-radius: 4px;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.4);
+    outline: 2px solid #2563eb;
+    outline-offset: 2px;
+    z-index: 999999;
+}
+
 </style>
 {% endif %}
 {% endblock %}
 
-{%- block relbar1 %}{{ relbar() }}{% endblock %}
+{%- block relbar1 %}
+<a href="#main-content" class="skip-link">Skip to main content</a>
+{{ relbar() }}
+{%- endblock %}
 
 {%- block content %}
     {{ sidebar() }}
     {%- block document %}
       <div class="documentwrapper">
-		<div class="body" role="main">
+		<div class="body" role="main" id="main-content" tabindex="-1">
 		{% if not embedded %}
 				<div id="ad-container" style="text-align:center">
 					<div align="center" data-freestar-ad="__970x90 __336x280" id="manualcalibre-ebook_leaderboard_atf">
