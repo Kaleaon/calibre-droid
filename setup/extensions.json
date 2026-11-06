@@ -132,6 +132,7 @@
         "lib_dirs": "!podofo_lib_dirs",
         "inc_dirs": "!podofo_inc_dirs",
         "error": "!podofo_error",
+        "optional": "1",
 		"needs_c++": "17"
     },
     {

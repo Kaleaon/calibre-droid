@@ -211,11 +211,11 @@ else:
     hunspell_inc_dirs = pkgconfig_include_dirs('hunspell', 'HUNSPELL_INC_DIR', '/usr/include/hunspell')
     hunspell_lib_dirs = pkgconfig_lib_dirs('hunspell', 'HUNSPELL_LIB_DIR', '/usr/lib')
     sw = os.environ.get('SW', os.path.expanduser('~/sw'))
-    podofo_inc = '/usr/include/podofo'
-    podofo_lib = '/usr/lib'
-    if not os.path.exists(podofo_inc + '/podofo.h'):
-        podofo_inc = os.path.join(sw, 'include', 'podofo')
-        podofo_lib = os.path.join(sw, 'lib')
+    podofo_inc = os.path.join(sw, 'include', 'podofo')
+    podofo_lib = os.path.join(sw, 'lib')
+    if not os.path.exists(os.path.join(podofo_inc, 'podofo.h')):
+        podofo_inc = '/usr/include/podofo'
+        podofo_lib = '/usr/lib'
     uchardet_inc_dirs = pkgconfig_include_dirs('uchardet', '', '/usr/include/uchardet')
     uchardet_lib_dirs = pkgconfig_lib_dirs('uchardet', '', '/usr/lib')
     uchardet_libs = pkgconfig_libs('uchardet', '', '')
@@ -248,5 +248,12 @@ podofo_error = None if os.path.exists(os.path.join(podofo_inc, 'podofo.h')) else
         ('PoDoFo not found on your system. Various PDF related',
     ' functionality will not work. Use the PODOFO_INC_DIR and',
     ' PODOFO_LIB_DIR environment variables.')
+if podofo_error is None and os.path.exists(os.path.join(podofo_inc, 'auxiliary', 'podofo_config.h')):
+    try:
+        with open(os.path.join(podofo_inc, 'auxiliary', 'podofo_config.h'), 'r') as f:
+            if 'PODOFO_VERSION_MAJOR 1' in f.read():
+                podofo_error = ('PoDoFo 1.x is not supported by this extension.',)
+    except Exception:
+        pass
 podofo_inc_dirs = [podofo_inc, os.path.dirname(podofo_inc)]
 podofo_lib_dirs = [podofo_lib]

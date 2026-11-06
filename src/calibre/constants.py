@@ -241,8 +241,14 @@ class ExtensionsPackageLoader:
     def create_module(self, spec):
         pass
 
-    def exec_module(self, spec):
-        pass
+    def exec_module(self, module):
+        import importlib
+        def __getattr__(name):
+            try:
+                return importlib.import_module('calibre_extensions.' + name)
+            except Exception:
+                raise AttributeError(f"module 'calibre_extensions' has no attribute '{name}'")
+        module.__getattr__ = __getattr__
 
 
 class ExtensionsImporter:

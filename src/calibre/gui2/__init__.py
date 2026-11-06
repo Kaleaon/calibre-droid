@@ -1200,7 +1200,7 @@ class Application(QApplication):
             args = [override_program_name] + args[1:]
         self.palette_manager = PaletteManager(force_calibre_style, headless)
         if headless:
-            args.extend(('-platformpluginpath', plugins_loc, '-platform', os.environ.get('CALIBRE_HEADLESS_PLATFORM', 'headless')))
+            args.extend(('-platformpluginpath', plugins_loc, '-platform', os.environ.get('CALIBRE_HEADLESS_PLATFORM', 'offscreen' if islinux else 'headless')))
         else:
             args.extend(self.palette_manager.args_to_qt)
         self.headless = headless
@@ -1623,7 +1623,7 @@ def ensure_app(headless=True):
             args = sys.argv[:1]
             has_headless = ismacos or islinux or isbsd
             if headless and has_headless:
-                args += ['-platformpluginpath', plugins_loc, '-platform', os.environ.get('CALIBRE_HEADLESS_PLATFORM', 'headless')]
+                args += ['-platformpluginpath', plugins_loc, '-platform', os.environ.get('CALIBRE_HEADLESS_PLATFORM', 'offscreen' if islinux else 'headless')]
                 if isbsd:
                     val = os.environ.get('QTWEBENGINE_CHROMIUM_FLAGS', '')
                     if val:
