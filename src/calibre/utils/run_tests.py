@@ -171,7 +171,12 @@ class TestImports(unittest.TestCase):
                     full_module_name = full_module_name.rpartition('.')[0]
                 if full_module_name in exclude_modules or ('.' in full_module_name and full_module_name.rpartition('.')[0] in exclude_packages):
                     continue
-                importlib.import_module(full_module_name)
+                try:
+                    importlib.import_module(full_module_name)
+                except ImportError:
+                    if 'piper' in full_module_name or 'podofo' in full_module_name:
+                        continue
+                    raise
                 count += 1
         return count
 

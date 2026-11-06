@@ -141,6 +141,7 @@ if ismacos:
         setenv('DYLD_FRAMEWORK_PATH', '$SW/qt/lib')
         setenv('PKG_CONFIG_PATH', '$SW/lib/pkgconfig')
         setenv('CALIBRE_ESPEAK_DATA_DIR', '$SW/share/espeak-ng-data')
+        setenv('ESPEAK_DATA_PATH', '$SW/share/espeak-ng-data')
 else:
 
     SWBASE = '/sw'
@@ -152,10 +153,11 @@ else:
         setenv('CFLAGS', '-I$SW/include')
         setenv('LDFLAGS', '-L$SW/lib')
         setenv('LD_LIBRARY_PATH', '$SW/qt/lib:$SW/ffmpeg/lib:$SW/lib')
-        setenv('PKG_CONFIG_PATH', '$SW/lib/pkgconfig')
+        setenv('PKG_CONFIG_PATH', '$SW/qt/lib/pkgconfig:$SW/ffmpeg/lib/pkgconfig:$SW/lib/pkgconfig')
         setenv('QMAKE', '$SW/qt/bin/qmake')
         setenv('CALIBRE_QT_PREFIX', '$SW/qt')
         setenv('CALIBRE_ESPEAK_DATA_DIR', '$SW/share/espeak-ng-data')
+        setenv('ESPEAK_DATA_PATH', '$SW/share/espeak-ng-data')
 
 
 def run(*args, timeout=600):
