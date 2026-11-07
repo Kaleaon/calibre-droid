@@ -158,20 +158,20 @@ def find_tests():
         def test_safe_atexit(self):
             with tempfile.TemporaryDirectory() as tdir:
                 self.assertFalse(os.listdir(tdir))
-                p = start_pipe_worker('from calibre.utils.safe_atexit import main_for_test; main_for_test()', cwd=tdir)
-                p.stdin.close()
-                p.wait(10)
+                with start_pipe_worker('from calibre.utils.safe_atexit import main_for_test; main_for_test()', cwd=tdir) as p:
+                    p.stdin.close()
+                    p.wait(10)
                 self.wait_for_empty(tdir)
-                p = start_pipe_worker('from calibre.utils.safe_atexit import main_for_test; main_for_test()', cwd=tdir)
-                p.kill()
-                p.wait(10)
+                with start_pipe_worker('from calibre.utils.safe_atexit import main_for_test; main_for_test()', cwd=tdir) as p:
+                    p.kill()
+                    p.wait(10)
                 self.wait_for_empty(tdir)
-                p = start_pipe_worker('from calibre.utils.safe_atexit import main_for_test; main_for_test(True)', cwd=tdir)
-                p.wait(10)
+                with start_pipe_worker('from calibre.utils.safe_atexit import main_for_test; main_for_test(True)', cwd=tdir) as p:
+                    p.wait(10)
                 self.wait_for_empty(tdir)
-                p = start_pipe_worker('from calibre.utils.safe_atexit import main_for_test; main_for_test(check_tdir=True)')
-                tempfiledir, bdir = p.stdout.read().decode().splitlines()[:2]
-                p.wait(10)
+                with start_pipe_worker('from calibre.utils.safe_atexit import main_for_test; main_for_test(check_tdir=True)') as p:
+                    tempfiledir, bdir = p.stdout.read().decode().splitlines()[:2]
+                    p.wait(10)
                 self.assertEqual(bdir, tempfiledir)
 
     return unittest.defaultTestLoader.loadTestsFromTestCase(TestSafeAtexit)

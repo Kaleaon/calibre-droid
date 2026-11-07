@@ -207,6 +207,48 @@ class ParsingTests(BaseTest):
         root = parse('<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en-US" xmlns:extra="extra"><body/></html>')
         self.assertIn('extra', root.nsmap, 'Extra namespace declaration on <html> tag not preserved')
 
+    def test_template_presentation_roles(self):
+        from calibre.ebooks.metadata.book.base import Metadata
+        from calibre.ebooks.oeb.transforms.jacket import render_jacket
+        from calibre.utils.resources import get_path as P
+
+        # Verify rendered jacket template table has role="presentation"
+        class OutputProfile:
+            short_name = 'default'
+            ratings_char = '★'
+            empty_ratings_char = '☆'
+
+        mi = Metadata('Test Title', ['Test Author'])
+        root = render_jacket(mi, OutputProfile())
+        header_tables = root.xpath('//*[local-name()="table" and contains(@class, "cbj_header")]')
+        self.assertTrue(header_tables, 'cbj_header table not found in rendered jacket')
+        self.assertEqual(header_tables[0].attrib.get('role'), 'presentation')
+
+        # Verify catalog template layout table has role="presentation"
+        template = P('catalog/template.xhtml', data=True).decode('utf-8')
+        raw_catalog = template.format(
+            xmlns='http://www.w3.org/1999/xhtml',
+            title_str='Catalog Title',
+            title='Title',
+            series='',
+            series_index='',
+            author_prefix='',
+            author='Author',
+            genres='',
+            formats='',
+            thumb='',
+            publisher='',
+            pubyear='',
+            rating='',
+            note_source='',
+            note_content='',
+            comments='',
+        )
+        cat_root = parse(raw_catalog)
+        cat_tables = cat_root.xpath('//*[local-name()="table" and @width="100%"]')
+        self.assertTrue(cat_tables, 'Layout table not found in rendered catalog')
+        self.assertEqual(cat_tables[0].attrib.get('role'), 'presentation')
+
 
 def timing():
     import sys

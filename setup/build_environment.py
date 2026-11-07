@@ -203,7 +203,9 @@ elif ismacos:
     sw_cmake = os.path.join(sw_bin_dir, 'cmake')
     system_cmake = shutil.which('cmake')
     if ismacos:
-        CMAKE = os.environ.get('CMAKE') or (system_cmake if system_cmake and not system_cmake.startswith(sw) else None) or (sw_cmake if os.path.exists(sw_cmake) else (system_cmake or 'cmake'))
+        system_cmake_non_sw = system_cmake if system_cmake and not system_cmake.startswith(sw) else None
+        fallback_cmake = sw_cmake if os.path.exists(sw_cmake) else (system_cmake or 'cmake')
+        CMAKE = os.environ.get('CMAKE') or system_cmake_non_sw or fallback_cmake
     else:
         CMAKE = os.environ.get('CMAKE') or (sw_cmake if os.path.exists(sw_cmake) else (system_cmake or 'cmake'))
     piper_inc_dirs = [sw_inc_dir, os.path.join(sw_inc_dir, 'onnxruntime')]
@@ -250,6 +252,7 @@ podofo_lib = os.environ.get('PODOFO_LIB_DIR', podofo_lib)
 podofo_inc = os.environ.get('PODOFO_INC_DIR', podofo_inc)
 podofo = os.environ.get('PODOFO_LIB_NAME', 'podofo')
 
+
 def _is_podofo_supported(inc_dir):
     cfg_files = [
         os.path.join(inc_dir, 'auxiliary', 'podofo_config.h'),
@@ -260,7 +263,7 @@ def _is_podofo_supported(inc_dir):
     for cfg in cfg_files:
         if os.path.exists(cfg):
             try:
-                with open(cfg, 'r') as f:
+                with open(cfg) as f:
                     content = f.read()
                 if 'PODOFO_VERSION_MAJOR 1' in content:
                     return False
@@ -275,12 +278,15 @@ def _is_podofo_supported(inc_dir):
                 pass
     return True
 
+
 if 'SKIP_PODOFO' in os.environ:
     podofo_error = 'Skipping PoDoFo'
 elif not os.path.exists(os.path.join(podofo_inc, 'podofo.h')):
-    podofo_error = ('PoDoFo not found on your system. Various PDF related',
+    podofo_error = (
+        'PoDoFo not found on your system. Various PDF related',
         ' functionality will not work. Use the PODOFO_INC_DIR and',
-        ' PODOFO_LIB_DIR environment variables.')
+        ' PODOFO_LIB_DIR environment variables.',
+    )
 elif not _is_podofo_supported(podofo_inc):
     podofo_error = 'PoDoFo 0.10+/1.x detected; skipping incompatible C++ extension'
 else:

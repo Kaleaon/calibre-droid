@@ -4,6 +4,7 @@
 import errno
 import os
 import socket
+import subprocess
 import sys
 from contextlib import closing
 from functools import partial
@@ -102,7 +103,10 @@ def send_message_via_worker(msg, address=None, timeout=5, wait_till_sent=True):
     from calibre.utils.ipc.simple_worker import start_pipe_worker
     if isinstance(msg, str):
         msg = msg.encode('utf-8')
-    p = start_pipe_worker(f'from calibre.gui2.listener import *; send_message_in_worker({address!r}, {timeout!r})')
+    p = start_pipe_worker(
+        f'from calibre.gui2.listener import *; send_message_in_worker({address!r}, {timeout!r})',
+        stdout=subprocess.DEVNULL
+    )
     with closing(p.stdin):
         p.stdin.write(msg)
     if wait_till_sent:
@@ -147,6 +151,10 @@ def find_tests():
                 send_message_in_process('quit', address=address)
                 server.wait(2)
             finally:
+                if server.stdin is not None:
+                    server.stdin.close()
+                if server.stdout is not None:
+                    server.stdout.close()
                 server.kill()
                 server.wait()
 
