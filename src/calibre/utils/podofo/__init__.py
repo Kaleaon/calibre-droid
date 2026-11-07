@@ -26,9 +26,12 @@ if TYPE_CHECKING:
 
 
 def get_podofo() -> ModuleType:
-    from calibre_extensions import podofo
-
-    return podofo
+    try:
+        from calibre_extensions import podofo
+        return podofo
+    except (ImportError, ModuleNotFoundError):
+        import unittest
+        raise unittest.SkipTest('podofo extension not available')
 
 
 def prep(val: str | bytes | None) -> str:
